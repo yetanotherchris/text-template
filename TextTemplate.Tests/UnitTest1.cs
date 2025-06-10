@@ -46,7 +46,18 @@ Josie";
         }
 
         var outText = sb.ToString();
-        Assert.NotEmpty(outText);
+        const string expected = "Dear Aunt Mildred,\n\n" +
+            "It was a pleasure to see you at the wedding.\n\n" +
+            "Thank you for the lovely bone china tea set.\n\n" +
+            "Best wishes,\nJosie\n" +
+            "Dear Uncle John,\n\n" +
+            "It is a shame you couldn't make it to the wedding.\n\n" +
+            "Thank you for the lovely moleskin pants.\n\n" +
+            "Best wishes,\nJosie\n" +
+            "Dear Cousin Rodney,\n\n" +
+            "It is a shame you couldn't make it to the wedding.\n\n" +
+            "Best wishes,\nJosie\n";
+        Assert.Equal(expected, outText);
     }
 
     [Fact(Skip="Block parsing not fully implemented")]
