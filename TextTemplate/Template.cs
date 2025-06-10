@@ -235,15 +235,39 @@ internal static class Parser
                 tokens.Add(new Token(TokenType.Text, text.Substring(i)));
                 break;
             }
+
             if (start > i)
             {
                 tokens.Add(new Token(TokenType.Text, text.Substring(i, start - i)));
             }
-            int end = text.IndexOf("}}", start);
+
+            bool trimLeft = start + 2 < text.Length && text[start + 2] == '-';
+            int actionStart = start + (trimLeft ? 3 : 2);
+
+            int end = text.IndexOf("}}", actionStart);
             if (end == -1) throw new InvalidOperationException("unclosed action");
-            string action = text.Substring(start + 2, end - start - 2);
+
+            bool trimRight = end > actionStart && text[end - 1] == '-';
+            int actionEnd = trimRight ? end - 1 : end;
+
+            string action = text.Substring(actionStart, actionEnd - actionStart);
             tokens.Add(new Token(TokenType.Action, action));
+
             i = end + 2;
+
+            if (trimLeft && tokens.Count > 1 && tokens[^2].Type == TokenType.Text)
+            {
+                var trimmed = tokens[^2].Text.TrimEnd();
+                tokens[^2] = new Token(TokenType.Text, trimmed);
+            }
+
+            if (trimRight)
+            {
+                while (i < text.Length && char.IsWhiteSpace(text[i]))
+                {
+                    i++;
+                }
+            }
         }
         return tokens;
     }
