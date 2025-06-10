@@ -97,4 +97,27 @@ Josie";
         parser.template();
         Assert.Equal(0, parser.NumberOfSyntaxErrors);
     }
+
+    [Fact]
+    public void AntlrParser_ParsesExampleTemplate()
+    {
+        const string letter = @"Dear {{.Name}},
+{{if .Attended}}
+It was a pleasure to see you at the wedding.
+{{- else}}
+It is a shame you couldn't make it to the wedding.
+{{- end}}
+{{with .Gift -}}
+Thank you for the lovely {{.}}.
+{{end}}
+Best wishes,
+Josie";
+
+        var input = new AntlrInputStream(letter);
+        var lexer = new GoTemplateLexer(input);
+        var tokens = new CommonTokenStream(lexer);
+        var parser = new GoTemplateParser(tokens);
+        parser.template();
+        Assert.Equal(0, parser.NumberOfSyntaxErrors);
+    }
 }
