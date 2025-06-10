@@ -34,10 +34,13 @@ command
     ;
 
 operand
+    : primary ('.' IDENTIFIER '(' (pipeline (',' pipeline)*)? ')')*
+    ;
+
+primary
     : IDENTIFIER
     | chainedField
     | variable
-    | methodCall
     | functionCall
     | literal
     | '(' pipeline ')'
@@ -51,9 +54,6 @@ variable
     : '$' IDENTIFIER
     ;
 
-methodCall
-    : operand '.' IDENTIFIER '(' (pipeline (',' pipeline)*)? ')'
-    ;
 
 functionCall
     : IDENTIFIER '(' (pipeline (',' pipeline)*)? ')'
@@ -78,7 +78,7 @@ RIGHT_DELIM
 STRING
     : '"' (~["\r\n] | '\\"')* '"'
     | '`' (~[`])* '`'
-    | '\'' (~['\r\n] | '\\'\'')* '\''
+    | '\'' ( '\\' . | ~['\r\n] )* '\''
     ;
 
 NUMBER
