@@ -394,6 +394,8 @@ internal static class Evaluator
     {
         if (data == null) return null;
         if (field == ".") return data;
+        if (field.StartsWith('.'))
+            field = field[1..];
         if (data is IDictionary dict)
         {
             if (dict.Contains(field)) return dict[field];
