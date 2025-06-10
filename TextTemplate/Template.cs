@@ -13,6 +13,8 @@ public class Template
     internal List<INode> _nodes = new();
     private readonly Dictionary<string, Template> _templates = new();
     private readonly Dictionary<string, Delegate> _funcs = new();
+    private string _leftDelim = "{{";
+    private string _rightDelim = "}}";
 
     public Template(string name)
     {
@@ -27,6 +29,23 @@ public class Template
     {
         _funcs["join"] = (Func<IEnumerable, string, string>)((IEnumerable e, string sep) => string.Join(sep, e.Cast<object>()));
         _funcs["println"] = (Func<object[], string>)(args => string.Join(" ", args) + Environment.NewLine);
+        _funcs["len"] = (Func<IEnumerable, int>)(e => e.Cast<object>().Count());
+        _funcs["upper"] = (Func<string, string>)(s => s.ToUpperInvariant());
+        _funcs["lower"] = (Func<string, string>)(s => s.ToLowerInvariant());
+        _funcs["index"] = (Func<object, object, object?>)((col, key) =>
+        {
+            switch (col)
+            {
+                case IList list when key is int i:
+                    return i >= 0 && i < list.Count ? list[i] : null;
+                case IDictionary dict:
+                    return dict.Contains(key) ? dict[key] : null;
+                case string str when key is int j:
+                    return j >= 0 && j < str.Length ? str[j] : null;
+                default:
+                    return null;
+            }
+        });
     }
 
     public Template Funcs(Dictionary<string, Delegate> funcs)
@@ -43,6 +62,16 @@ public class Template
         _nodes = Parser.Parse(text, this);
         return this;
     }
+
+    public Template Delims(string left, string right)
+    {
+        _leftDelim = left;
+        _rightDelim = right;
+        return this;
+    }
+
+    internal string LeftDelim => _leftDelim;
+    internal string RightDelim => _rightDelim;
 
     public void Define(string name, Template tpl)
     {
@@ -75,8 +104,8 @@ public class Template
         return sb.ToString();
     }
 
-    internal bool TryGetFunc(string name, out Delegate d) => _funcs.TryGetValue(name, out d);
-    internal bool TryGetTemplate(string name, out Template t) => _templates.TryGetValue(name, out t);
+    internal bool TryGetFunc(string name, out Delegate? d) => _funcs.TryGetValue(name, out d);
+    internal bool TryGetTemplate(string name, out Template? t) => _templates.TryGetValue(name, out t);
 }
 
 internal class Context
@@ -218,18 +247,18 @@ internal static class Parser
 {
     public static List<INode> Parse(string text, Template owner)
     {
-        var tokens = Tokenize(text);
+        var tokens = Tokenize(text, owner.LeftDelim, owner.RightDelim);
         var idx = 0;
         return ParseList(tokens, ref idx, owner);
     }
 
-    private static List<Token> Tokenize(string text)
+    private static List<Token> Tokenize(string text, string ldelim, string rdelim)
     {
         var tokens = new List<Token>();
         int i = 0;
         while (i < text.Length)
         {
-            int start = text.IndexOf("{{", i);
+            int start = text.IndexOf(ldelim, i, StringComparison.Ordinal);
             if (start == -1)
             {
                 tokens.Add(new Token(TokenType.Text, text.Substring(i)));
@@ -241,24 +270,35 @@ internal static class Parser
                 tokens.Add(new Token(TokenType.Text, text.Substring(i, start - i)));
             }
 
-            bool trimLeft = start + 2 < text.Length && text[start + 2] == '-';
-            int actionStart = start + (trimLeft ? 3 : 2);
+            bool trimLeft = start + ldelim.Length < text.Length && text[start + ldelim.Length] == '-';
+            int actionStart = start + ldelim.Length + (trimLeft ? 1 : 0);
 
-            int end = text.IndexOf("}}", actionStart);
+            int end = text.IndexOf(rdelim, actionStart, StringComparison.Ordinal);
             if (end == -1) throw new InvalidOperationException("unclosed action");
 
             bool trimRight = end > actionStart && text[end - 1] == '-';
             int actionEnd = trimRight ? end - 1 : end;
 
             string action = text.Substring(actionStart, actionEnd - actionStart);
-            tokens.Add(new Token(TokenType.Action, action));
-
-            i = end + 2;
-
-            if (trimLeft && tokens.Count > 1 && tokens[^2].Type == TokenType.Text)
+            bool isComment = false;
+            var trimmed = action.Trim();
+            if (trimmed.StartsWith("/*") && trimmed.EndsWith("*/"))
             {
-                var trimmed = tokens[^2].Text.TrimEnd();
-                tokens[^2] = new Token(TokenType.Text, trimmed);
+                isComment = true;
+            }
+            else
+            {
+                tokens.Add(new Token(TokenType.Action, action));
+            }
+
+            i = end + rdelim.Length;
+
+            int textIdx = tokens.Count - 1;
+            if (!isComment) textIdx--; // previous token before action
+            if (trimLeft && textIdx >= 0 && tokens[textIdx].Type == TokenType.Text)
+            {
+                var txtTrim = tokens[textIdx].Text.TrimEnd();
+                tokens[textIdx] = new Token(TokenType.Text, txtTrim);
             }
 
             if (trimRight)
@@ -392,6 +432,26 @@ internal record Token(TokenType Type, string Text);
 internal static class Evaluator
 {
     public static object? Eval(string expr, Context ctx)
+    {
+        expr = expr.Trim();
+        var pipeParts = expr.Split('|', StringSplitOptions.RemoveEmptyEntries);
+        object? val = EvalSimple(pipeParts[0].Trim(), ctx);
+        for (int i = 1; i < pipeParts.Length; i++)
+        {
+            var cmd = pipeParts[i].Trim();
+            var pieces = Split(cmd);
+            if (!ctx.Template.TryGetFunc(pieces[0], out var fn))
+                throw new NotSupportedException($"unknown function {pieces[0]}");
+            var args = new object?[pieces.Length];
+            args[0] = val;
+            for (int j = 1; j < pieces.Length; j++)
+                args[j] = Eval(pieces[j], ctx);
+            val = fn.DynamicInvoke(args);
+        }
+        return val;
+    }
+
+    private static object? EvalSimple(string expr, Context ctx)
     {
         expr = expr.Trim();
         if (expr == ".") return ctx.Data;
