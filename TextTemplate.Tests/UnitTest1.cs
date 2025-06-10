@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Xunit;
 using TextTemplate;
+using Antlr4.Runtime;
 
 namespace TextTemplate.Tests;
 
@@ -83,5 +84,17 @@ Josie";
         Assert.Equal(masterOut, fileOut);
         Assert.NotEmpty(masterOut);
         Assert.NotEmpty(overlayOut);
+    }
+
+    [Fact]
+    public void AntlrParser_ParsesPlainText()
+    {
+        const string text = "Hello world";
+        var input = new AntlrInputStream(text);
+        var lexer = new GoTemplateLexer(input);
+        var tokens = new CommonTokenStream(lexer);
+        var parser = new GoTemplateParser(tokens);
+        parser.template();
+        Assert.Equal(0, parser.NumberOfSyntaxErrors);
     }
 }
