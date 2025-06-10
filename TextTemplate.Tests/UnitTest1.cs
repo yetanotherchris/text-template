@@ -47,11 +47,11 @@ Josie";
 
         var outText = sb.ToString();
         const string expected = "Dear Aunt Mildred,\n\n" +
-            "It was a pleasure to see you at the wedding.\n\n" +
+            "It was a pleasure to see you at the wedding.\n" +
             "Thank you for the lovely bone china tea set.\n\n" +
             "Best wishes,\nJosie\n" +
             "Dear Uncle John,\n\n" +
-            "It is a shame you couldn't make it to the wedding.\n\n" +
+            "It is a shame you couldn't make it to the wedding.\n" +
             "Thank you for the lovely moleskin pants.\n\n" +
             "Best wishes,\nJosie\n" +
             "Dear Cousin Rodney,\n\n" +
