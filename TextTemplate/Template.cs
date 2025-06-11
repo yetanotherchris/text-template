@@ -46,6 +46,13 @@ public class Template
                     return null;
             }
         });
+
+        _funcs["eq"] = (Func<object?, object?, bool>)((a, b) =>
+        {
+            if (a == null && b == null) return true;
+            if (a == null || b == null) return false;
+            return a.Equals(b);
+        });
     }
 
     public Template Funcs(Dictionary<string, Delegate> funcs)
@@ -186,7 +193,18 @@ internal class RangeNode : INode
             foreach (var item in enumerable)
             {
                 var childCtx = new Context(item!, ctx.Template);
-                foreach (var n in _body) n.Write(childCtx, sb);
+                try
+                {
+                    foreach (var n in _body) n.Write(childCtx, sb);
+                }
+                catch (BreakException)
+                {
+                    break;
+                }
+                catch (ContinueException)
+                {
+                    continue;
+                }
             }
         }
         else if (_else != null)
@@ -242,6 +260,19 @@ internal class TemplateNode : INode
             n.Write(childCtx, sb);
     }
 }
+
+internal class BreakNode : INode
+{
+    public void Write(Context ctx, StringBuilder sb) => throw new BreakException();
+}
+
+internal class ContinueNode : INode
+{
+    public void Write(Context ctx, StringBuilder sb) => throw new ContinueException();
+}
+
+internal class BreakException : Exception { }
+internal class ContinueException : Exception { }
 
 internal static class Parser
 {
@@ -415,6 +446,14 @@ internal static class Parser
                     blockTpl._nodes = blockBody;
                     owner.AddTemplate(blockName, blockTpl);
                     list.Add(new TemplateNode(blockName, blockExpr));
+                    break;
+                case "break":
+                    list.Add(new BreakNode());
+                    idx++;
+                    break;
+                case "continue":
+                    list.Add(new ContinueNode());
+                    idx++;
                     break;
                 default:
                     list.Add(new ActionNode(tok.Text));
