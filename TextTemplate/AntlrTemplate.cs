@@ -1,14 +1,13 @@
 using System.Collections.Generic;
 using System.Text;
-using System.Text.RegularExpressions;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
 namespace TextTemplate;
 
 /// <summary>
-/// Simple template processor that uses the generated GoTemplate parser
-/// to replace {{variable}} tokens with values from a dictionary.
+/// Simple template processor that uses a small ANTLR grammar
+/// to replace {{variable}} tokens and evaluate {{if}} blocks.
 /// </summary>
 public static class AntlrTemplate
 {
@@ -18,47 +17,14 @@ public static class AntlrTemplate
     /// </summary>
     public static string Process(string templateString, IDictionary<string, object> data)
     {
-        // Parse template to validate syntax, though the parse tree is not yet
-        // used for evaluation.
         AntlrInputStream inputStream = new(templateString);
-        var lexer = new GoTemplateLexer(inputStream);
+        var lexer = new SimpleTemplateLexer(inputStream);
         var tokens = new CommonTokenStream(lexer);
-        var parser = new GoTemplateParser(tokens);
-        parser.template();
+        var parser = new SimpleTemplateParser(tokens);
+        IParseTree tree = parser.template();
 
-        string result = templateString;
-
-        // Evaluate simple if/else blocks. Supports constructs like:
-        // {{if .Condition}}text{{else}}other{{end}}
-        const string ifPattern =
-            "{{\\s*if\\s+(?<cond>\\.?[a-zA-Z_][a-zA-Z0-9_]*)\\s*}}" +
-            "(?<then>.*?)" +
-            "(?:{{\\s*else\\s*}}(?<else>.*?))?" +
-            "{{\\s*end\\s*}}";
-        Regex ifRegex = new(ifPattern, RegexOptions.Singleline);
-
-        bool hasIf;
-        do
-        {
-            hasIf = false;
-            result = ifRegex.Replace(result, m =>
-            {
-                hasIf = true;
-                string key = m.Groups["cond"].Value.TrimStart('.');
-                bool cond = data.TryGetValue(key, out var v) && IsTrue(v);
-                return cond ? m.Groups["then"].Value : m.Groups["else"].Value;
-            });
-        } while (hasIf);
-
-        // Replace simple variables like {{ .Name }}
-        result = Regex.Replace(
-            result,
-            @"{{\s*\.?(?<name>[a-zA-Z_][a-zA-Z0-9_]*)\s*}}",
-            m => data.TryGetValue(m.Groups["name"].Value, out var val)
-                ? val?.ToString() ?? string.Empty
-                : "{{UNDEFINED:" + m.Groups["name"].Value + "}}");
-
-        return result;
+        var visitor = new ReplacementVisitor(data);
+        return visitor.Visit(tree);
     }
 
     private static bool IsTrue(object? value)
@@ -72,7 +38,7 @@ public static class AntlrTemplate
         };
     }
 
-    private class ReplacementVisitor : GoTemplateBaseVisitor<string>
+    private class ReplacementVisitor : SimpleTemplateParserBaseVisitor<string>
     {
         private readonly IDictionary<string, object> _data;
 
@@ -81,37 +47,44 @@ public static class AntlrTemplate
             _data = data;
         }
 
-        public override string VisitTemplate(GoTemplateParser.TemplateContext context)
+        public override string VisitTemplate(SimpleTemplateParser.TemplateContext context)
         {
             var sb = new StringBuilder();
-            foreach (var elem in context.element())
-                sb.Append(Visit(elem));
+            foreach (var part in context.content().part())
+                sb.Append(Visit(part));
             return sb.ToString();
         }
 
-        public override string VisitElement(GoTemplateParser.ElementContext context)
+        public override string VisitPart(SimpleTemplateParser.PartContext context)
         {
             if (context.TEXT() != null)
                 return context.TEXT().GetText();
-            if (context.action() != null)
-                return Visit(context.action());
+            if (context.placeholder() != null)
+                return Visit(context.placeholder());
+            if (context.ifBlock() != null)
+                return Visit(context.ifBlock());
             return string.Empty;
         }
 
-        public override string VisitAction(GoTemplateParser.ActionContext context)
+        public override string VisitPlaceholder(SimpleTemplateParser.PlaceholderContext context)
         {
-            // Only handle simple variable actions of the form {{ name }} or {{ .name }}
-            if (context.pipeline() != null)
-            {
-                var text = context.pipeline().GetText();
-                var key = text.TrimStart('.');
-                System.Console.Error.WriteLine($"VAR: '{text}' => '{key}'");
-                if (_data.TryGetValue(key, out var value))
-                    return value?.ToString() ?? string.Empty;
-                return "{{UNDEFINED:" + key + "}}";
-            }
-            // For unsupported actions return them unchanged
-            return context.GetText();
+            var text = context.IDENT()?.GetText() ?? context.DOTIDENT()?.GetText();
+            var key = text!.TrimStart('.');
+            if (_data.TryGetValue(key, out var value))
+                return value?.ToString() ?? string.Empty;
+            return "{{UNDEFINED:" + key + "}}";
+        }
+
+        public override string VisitIfBlock(SimpleTemplateParser.IfBlockContext context)
+        {
+            var text = context.IDENT()?.GetText() ?? context.DOTIDENT()?.GetText();
+            var key = text!.TrimStart('.');
+            bool cond = _data.TryGetValue(key, out var val) && IsTrue(val);
+            if (cond)
+                return Visit(context.content(0));
+            if (context.ELSE() != null)
+                return Visit(context.content(1));
+            return string.Empty;
         }
     }
 }
