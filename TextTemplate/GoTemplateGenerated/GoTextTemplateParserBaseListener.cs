@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generated from TextTemplate/SimpleTemplateParser.g4 by ANTLR 4.9.2
+// Generated from GoTextTemplateParser.g4 by ANTLR 4.9.2
 
 // Unreachable code detected
 #pragma warning disable 0162
@@ -27,74 +27,86 @@ using IToken = Antlr4.Runtime.IToken;
 using ParserRuleContext = Antlr4.Runtime.ParserRuleContext;
 
 /// <summary>
-/// This class provides an empty implementation of <see cref="ISimpleTemplateParserListener"/>,
+/// This class provides an empty implementation of <see cref="IGoTextTemplateParserListener"/>,
 /// which can be extended to create a listener which only needs to handle a subset
 /// of the available methods.
 /// </summary>
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.9.2")]
 [System.Diagnostics.DebuggerNonUserCode]
 [System.CLSCompliant(false)]
-public partial class SimpleTemplateParserBaseListener : ISimpleTemplateParserListener {
+public partial class GoTextTemplateParserBaseListener : IGoTextTemplateParserListener {
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="SimpleTemplateParser.template"/>.
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.template"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterTemplate([NotNull] SimpleTemplateParser.TemplateContext context) { }
+	public virtual void EnterTemplate([NotNull] GoTextTemplateParser.TemplateContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="SimpleTemplateParser.template"/>.
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.template"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitTemplate([NotNull] SimpleTemplateParser.TemplateContext context) { }
+	public virtual void ExitTemplate([NotNull] GoTextTemplateParser.TemplateContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="SimpleTemplateParser.content"/>.
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.content"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterContent([NotNull] SimpleTemplateParser.ContentContext context) { }
+	public virtual void EnterContent([NotNull] GoTextTemplateParser.ContentContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="SimpleTemplateParser.content"/>.
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.content"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitContent([NotNull] SimpleTemplateParser.ContentContext context) { }
+	public virtual void ExitContent([NotNull] GoTextTemplateParser.ContentContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="SimpleTemplateParser.part"/>.
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.part"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterPart([NotNull] SimpleTemplateParser.PartContext context) { }
+	public virtual void EnterPart([NotNull] GoTextTemplateParser.PartContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="SimpleTemplateParser.part"/>.
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.part"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitPart([NotNull] SimpleTemplateParser.PartContext context) { }
+	public virtual void ExitPart([NotNull] GoTextTemplateParser.PartContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="SimpleTemplateParser.placeholder"/>.
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.placeholder"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterPlaceholder([NotNull] SimpleTemplateParser.PlaceholderContext context) { }
+	public virtual void EnterPlaceholder([NotNull] GoTextTemplateParser.PlaceholderContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="SimpleTemplateParser.placeholder"/>.
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.placeholder"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitPlaceholder([NotNull] SimpleTemplateParser.PlaceholderContext context) { }
+	public virtual void ExitPlaceholder([NotNull] GoTextTemplateParser.PlaceholderContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="SimpleTemplateParser.ifBlock"/>.
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.ifBlock"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterIfBlock([NotNull] SimpleTemplateParser.IfBlockContext context) { }
+	public virtual void EnterIfBlock([NotNull] GoTextTemplateParser.IfBlockContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="SimpleTemplateParser.ifBlock"/>.
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.ifBlock"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitIfBlock([NotNull] SimpleTemplateParser.IfBlockContext context) { }
+	public virtual void ExitIfBlock([NotNull] GoTextTemplateParser.IfBlockContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.forBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterForBlock([NotNull] GoTextTemplateParser.ForBlockContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.forBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitForBlock([NotNull] GoTextTemplateParser.ForBlockContext context) { }
 
 	/// <inheritdoc/>
 	/// <remarks>The default implementation does nothing.</remarks>
