@@ -76,6 +76,8 @@ public static class TemplateEngine
         var type = model.GetType();
         foreach (var prop in type.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
         {
+            if (prop.GetIndexParameters().Length > 0)
+                continue;
             var value = prop.GetValue(model);
             if (value != null)
                 dict[prop.Name] = value;
@@ -136,6 +138,8 @@ public static class TemplateEngine
                 return Visit(context.ifBlock());
             if (context.forBlock() != null)
                 return Visit(context.forBlock());
+            if (context.rangeBlock() != null)
+                return Visit(context.rangeBlock());
             return string.Empty;
         }
 
@@ -184,6 +188,85 @@ public static class TemplateEngine
                 };
                 var v = new ReplacementVisitor(child);
                 sb.Append(v.Visit(context.content()));
+            }
+
+            if (sb.Length == 0 && context.elseBlock() != null)
+                return Visit(context.elseBlock().content());
+
+            return sb.ToString();
+        }
+
+        public override string VisitRangeBlock(GoTextTemplateParser.RangeBlockContext context)
+        {
+            var sourceObj = ResolvePath(context.rangeClause().path());
+            if (sourceObj is not IEnumerable)
+            {
+                if (context.elseBlock() != null)
+                    return Visit(context.elseBlock().content());
+                return string.Empty;
+            }
+            IEnumerable enumerable = (IEnumerable)sourceObj;
+
+            string? firstVar = null;
+            string? secondVar = null;
+            var varList = context.rangeClause().varList();
+            if (varList != null)
+            {
+                var vars = varList.varName();
+                if (vars.Length > 0) firstVar = vars[0].GetText().TrimStart('$');
+                if (vars.Length > 1) secondVar = vars[1].GetText().TrimStart('$');
+            }
+
+            var sb = new StringBuilder();
+
+            if (sourceObj is IDictionary dict)
+            {
+                foreach (DictionaryEntry entry in dict)
+                {
+                    var root = entry.Value is IDictionary<string, object> valueDict
+                        ? new Dictionary<string, object>(valueDict)
+                        : ToDictionary(entry.Value!);
+
+                    foreach (var kv in _data)
+                        if (!root.ContainsKey(kv.Key))
+                            root[kv.Key] = kv.Value;
+
+                    if (firstVar != null)
+                        root[firstVar] = entry.Key!;
+                    if (secondVar != null)
+                        root[secondVar] = entry.Value!;
+
+                    var v = new ReplacementVisitor(root);
+                    sb.Append(v.Visit(context.content()));
+                }
+            }
+            else
+            {
+                int index = 0;
+                foreach (var item in enumerable)
+                {
+                    var root = item is IDictionary<string, object> itemDict
+                        ? new Dictionary<string, object>(itemDict)
+                        : ToDictionary(item!);
+
+                    foreach (var kv in _data)
+                        if (!root.ContainsKey(kv.Key))
+                            root[kv.Key] = kv.Value;
+
+                    if (firstVar != null && secondVar != null)
+                    {
+                        root[firstVar] = index;
+                        root[secondVar] = item!;
+                    }
+                    else if (firstVar != null)
+                    {
+                        root[firstVar] = item!;
+                    }
+
+                    var v = new ReplacementVisitor(root);
+                    sb.Append(v.Visit(context.content()));
+                    index++;
+                }
             }
 
             if (sb.Length == 0 && context.elseBlock() != null)

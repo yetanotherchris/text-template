@@ -98,6 +98,30 @@ public interface IGoTextTemplateParserVisitor<Result> : IParseTreeVisitor<Result
 	/// <return>The visitor result.</return>
 	Result VisitForBlock([NotNull] GoTextTemplateParser.ForBlockContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.rangeBlock"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitRangeBlock([NotNull] GoTextTemplateParser.RangeBlockContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.rangeClause"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitRangeClause([NotNull] GoTextTemplateParser.RangeClauseContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.varList"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitVarList([NotNull] GoTextTemplateParser.VarListContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.varName"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitVarName([NotNull] GoTextTemplateParser.VarNameContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.open"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
