@@ -86,4 +86,38 @@ Josie";
         });
         Assert.Equal("Numbers: 1,2,3,", result);
     }
+
+    [Fact]
+    public void AntlrTemplate_NestedField()
+    {
+        const string tmpl = "User: {{ .User.Name }}";
+        var result = AntlrTemplate.Process(tmpl, new Dictionary<string, object>
+        {
+            ["User"] = new Recipient { Name = "John" }
+        });
+        Assert.Equal("User: John", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_ElseIfBlock()
+    {
+        const string tmpl = "{{ if .A }}A{{ else if .B }}B{{ else }}C{{ end }}";
+        var result = AntlrTemplate.Process(tmpl, new Dictionary<string, object>
+        {
+            ["A"] = false,
+            ["B"] = true
+        });
+        Assert.Equal("B", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_ForLoopElse()
+    {
+        const string tmpl = "{{ for x in Items }}X{{ else }}Empty{{ end }}";
+        var result = AntlrTemplate.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new int[0]
+        });
+        Assert.Equal("Empty", result);
+    }
 }

@@ -84,6 +84,18 @@ public partial class GoTextTemplateParserBaseListener : IGoTextTemplateParserLis
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitPlaceholder([NotNull] GoTextTemplateParser.PlaceholderContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.path"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterPath([NotNull] GoTextTemplateParser.PathContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.path"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitPath([NotNull] GoTextTemplateParser.PathContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.ifBlock"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -95,6 +107,30 @@ public partial class GoTextTemplateParserBaseListener : IGoTextTemplateParserLis
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitIfBlock([NotNull] GoTextTemplateParser.IfBlockContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.elseIfBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterElseIfBlock([NotNull] GoTextTemplateParser.ElseIfBlockContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.elseIfBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitElseIfBlock([NotNull] GoTextTemplateParser.ElseIfBlockContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.elseBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterElseBlock([NotNull] GoTextTemplateParser.ElseBlockContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.elseBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitElseBlock([NotNull] GoTextTemplateParser.ElseBlockContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.forBlock"/>.
 	/// <para>The default implementation does nothing.</para>

@@ -56,11 +56,29 @@ public interface IGoTextTemplateParserVisitor<Result> : IParseTreeVisitor<Result
 	/// <return>The visitor result.</return>
 	Result VisitPlaceholder([NotNull] GoTextTemplateParser.PlaceholderContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.path"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitPath([NotNull] GoTextTemplateParser.PathContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.ifBlock"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitIfBlock([NotNull] GoTextTemplateParser.IfBlockContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.elseIfBlock"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitElseIfBlock([NotNull] GoTextTemplateParser.ElseIfBlockContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.elseBlock"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitElseBlock([NotNull] GoTextTemplateParser.ElseBlockContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.forBlock"/>.
 	/// </summary>
