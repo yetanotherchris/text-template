@@ -16,6 +16,8 @@ public class Recipient
 
 public class UnitTest1
 {
+    // Example ported directly from Go's text/template documentation. This
+    // serves as a simple integration test for the Template API.
     [Fact]
     public void ExampleTemplate()
     {
