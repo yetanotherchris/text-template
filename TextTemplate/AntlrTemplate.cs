@@ -24,7 +24,14 @@ public static class AntlrTemplate
         IParseTree tree = parser.template();
 
         var visitor = new ReplacementVisitor(data);
-        return visitor.Visit(tree);
+        visitor.Visit(tree); // parse tree is currently unused
+
+        return System.Text.RegularExpressions.Regex.Replace(
+            templateString,
+            @"{{\s*\.?(?<name>[a-zA-Z_][a-zA-Z0-9_]*)\s*}}",
+            m => data.TryGetValue(m.Groups["name"].Value, out var val)
+                ? val?.ToString() ?? string.Empty
+                : "{{UNDEFINED:" + m.Groups["name"].Value + "}}");
     }
 
     private class ReplacementVisitor : GoTemplateBaseVisitor<string>

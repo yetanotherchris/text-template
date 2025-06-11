@@ -1,6 +1,7 @@
 using Xunit;
 using TextTemplate;
 using Antlr4.Runtime;
+using System.Collections.Generic;
 
 namespace TextTemplate.Tests;
 
@@ -43,6 +44,17 @@ public class UnitTest1
             tok => Assert.Equal(GoTemplateLexer.LEFT_DELIM, tok.Type),
             tok => Assert.Equal(GoTemplateLexer.TEXT, tok.Type)
         );
+    }
+
+    [Fact]
+    public void AntlrTemplate_ReplacesVariables()
+    {
+        const string text = "Hello {{.Name}}!";
+        var result = AntlrTemplate.Process(text, new Dictionary<string, object>
+        {
+            ["Name"] = "World"
+        });
+        Assert.Equal("Hello World!", result);
     }
 
     [Fact]
