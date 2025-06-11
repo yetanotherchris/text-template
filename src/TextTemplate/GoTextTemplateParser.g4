@@ -5,14 +5,17 @@ template : content EOF;
 content  : part*;
 part     : TEXT | placeholder | ifBlock | forBlock;
 
-placeholder : OPEN path CLOSE;
+placeholder : open path close;
 
 path : (DOT? IDENT) ( (DOT IDENT) | (LBRACK (NUMBER | STRING | IDENT) RBRACK) )*;
 
-ifBlock : OPEN IF path CLOSE content (elseIfBlock)* (elseBlock)? OPEN END CLOSE;
+ifBlock : open IF path close content (elseIfBlock)* (elseBlock)? open END close;
 
-elseIfBlock : OPEN ELSE IF path CLOSE content;
+elseIfBlock : open ELSE IF path close content;
 
-elseBlock : OPEN ELSE CLOSE content;
+elseBlock : open ELSE close content;
 
-forBlock : OPEN FOR IDENT IN path CLOSE content (elseBlock)? OPEN END CLOSE;
+forBlock : open FOR IDENT IN path close content (elseBlock)? open END close;
+
+open  : OPEN | OPEN_TRIM;
+close : CLOSE | CLOSE_TRIM;

@@ -18,6 +18,7 @@ public static class TemplateEngine
     /// </summary>
     public static string Process(string templateString, IDictionary<string, object> data)
     {
+        templateString = PreprocessWhitespace(templateString);
         AntlrInputStream inputStream = new(templateString);
         var lexer = new GoTextTemplateLexer(inputStream);
         var tokens = new CommonTokenStream(lexer);
@@ -37,6 +38,35 @@ public static class TemplateEngine
         IDictionary<string, object> dict = model as IDictionary<string, object> ??
             ToDictionary(model!);
         return Process(templateString, dict);
+    }
+
+    private static string PreprocessWhitespace(string template)
+    {
+        var sb = new StringBuilder();
+        for (int i = 0; i < template.Length;)
+        {
+            if (i + 3 <= template.Length && template[i] == '{' && template[i + 1] == '{' && template[i + 2] == '-')
+            {
+                while (sb.Length > 0 && char.IsWhiteSpace(sb[sb.Length - 1]))
+                    sb.Length--;
+                sb.Append("{{-");
+                i += 3;
+                continue;
+            }
+
+            if (i + 3 <= template.Length && template[i] == '-' && template[i + 1] == '}' && template[i + 2] == '}')
+            {
+                i += 3;
+                while (i < template.Length && char.IsWhiteSpace(template[i]))
+                    i++;
+                sb.Append("-}}");
+                continue;
+            }
+
+            sb.Append(template[i]);
+            i++;
+        }
+        return sb.ToString();
     }
 
     private static IDictionary<string, object> ToDictionary(object model)
