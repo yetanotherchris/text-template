@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
@@ -17,21 +18,58 @@ public static class AntlrTemplate
     /// </summary>
     public static string Process(string templateString, IDictionary<string, object> data)
     {
+        // Parse template to validate syntax, though the parse tree is not yet
+        // used for evaluation.
         AntlrInputStream inputStream = new(templateString);
         var lexer = new GoTemplateLexer(inputStream);
         var tokens = new CommonTokenStream(lexer);
         var parser = new GoTemplateParser(tokens);
-        IParseTree tree = parser.template();
+        parser.template();
 
-        var visitor = new ReplacementVisitor(data);
-        visitor.Visit(tree); // parse tree is currently unused
+        string result = templateString;
 
-        return System.Text.RegularExpressions.Regex.Replace(
-            templateString,
+        // Evaluate simple if/else blocks. Supports constructs like:
+        // {{if .Condition}}text{{else}}other{{end}}
+        const string ifPattern =
+            "{{\\s*if\\s+(?<cond>\\.?[a-zA-Z_][a-zA-Z0-9_]*)\\s*}}" +
+            "(?<then>.*?)" +
+            "(?:{{\\s*else\\s*}}(?<else>.*?))?" +
+            "{{\\s*end\\s*}}";
+        Regex ifRegex = new(ifPattern, RegexOptions.Singleline);
+
+        bool hasIf;
+        do
+        {
+            hasIf = false;
+            result = ifRegex.Replace(result, m =>
+            {
+                hasIf = true;
+                string key = m.Groups["cond"].Value.TrimStart('.');
+                bool cond = data.TryGetValue(key, out var v) && IsTrue(v);
+                return cond ? m.Groups["then"].Value : m.Groups["else"].Value;
+            });
+        } while (hasIf);
+
+        // Replace simple variables like {{ .Name }}
+        result = Regex.Replace(
+            result,
             @"{{\s*\.?(?<name>[a-zA-Z_][a-zA-Z0-9_]*)\s*}}",
             m => data.TryGetValue(m.Groups["name"].Value, out var val)
                 ? val?.ToString() ?? string.Empty
                 : "{{UNDEFINED:" + m.Groups["name"].Value + "}}");
+
+        return result;
+    }
+
+    private static bool IsTrue(object? value)
+    {
+        return value switch
+        {
+            bool b => b,
+            string s when bool.TryParse(s, out var b) => b,
+            int i => i != 0,
+            _ => false
+        };
     }
 
     private class ReplacementVisitor : GoTemplateBaseVisitor<string>

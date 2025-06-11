@@ -50,21 +50,28 @@ public class UnitTest1
     [Fact]
     public void AntlrTemplate_ReplacesVariablesInLetter()
     {
-        const string letter = @"Dear {{Name}},
-Thank you for the lovely {{Gift}}.
+        const string letter = @"Dear {{ .Name }},
+{{ if .Attended }}
+It was a pleasure to see you at the wedding.
+{{ else }}
+It is a shame you couldn't make it to the wedding.
+{{ end }}
+Thank you for the lovely {{ .Gift }}.
 Best wishes,
 Josie";
 
         var result = AntlrTemplate.Process(letter, new Dictionary<string, object>
         {
             ["Name"] = "Bob",
-            ["Gift"] = "toaster"
+            ["Gift"] = "toaster",
+            ["Attended"] = true
         });
 
-        const string expected = @"Dear Bob,
-Thank you for the lovely toaster.
-Best wishes,
-Josie";
+        const string expected = "Dear Bob,\n\n" +
+            "It was a pleasure to see you at the wedding.\n\n" +
+            "Thank you for the lovely toaster.\n" +
+            "Best wishes,\n" +
+            "Josie";
 
         Assert.Equal(expected, result);
     }
