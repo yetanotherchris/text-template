@@ -129,4 +129,37 @@ Josie";
         var result = TemplateEngine.Process(tmpl, model);
         Assert.Equal("Hello World!", result);
     }
+
+    [Fact]
+    public void AntlrTemplate_ArrayIndexing()
+    {
+        const string tmpl = "First: {{ .Items[0] }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new[] { "one", "two" }
+        });
+        Assert.Equal("First: one", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_MapAccess()
+    {
+        const string tmpl = "Value: {{ .Data.key }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Data"] = new Dictionary<string, object> { ["key"] = "val" }
+        });
+        Assert.Equal("Value: val", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_WhitespaceControl()
+    {
+        const string tmpl = "A  {{- .Name -}}  B";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Name"] = "X"
+        });
+        Assert.Equal("AXB", result);
+    }
 }

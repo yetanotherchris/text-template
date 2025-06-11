@@ -3,20 +3,22 @@ grammar GoTextTemplate;
 template : part* EOF;
 part : TEXT | placeholder | ifBlock | forBlock;
 
-placeholder : OPEN path CLOSE;
+placeholder : open path close;
 
 path : (DOT? IDENT) ( (DOT IDENT) | (LBRACK (NUMBER | STRING | IDENT) RBRACK) )*;
 
-ifBlock : OPEN IF path CLOSE template (elseIfBlock)* (elseBlock)? OPEN END CLOSE;
-elseIfBlock : OPEN ELSE IF path CLOSE template;
-elseBlock : OPEN ELSE CLOSE template;
+ifBlock : open IF path close template (elseIfBlock)* (elseBlock)? open END close;
+elseIfBlock : open ELSE IF path close template;
+elseBlock : open ELSE close template;
 
-forBlock : OPEN FOR IDENT IN path CLOSE template (elseBlock)? OPEN END CLOSE;
+forBlock : open FOR IDENT IN path close template (elseBlock)? open END close;
 
+OPEN_TRIM : '{{-' -> pushMode(EXPR);
 OPEN  : '{{' -> pushMode(EXPR);
 TEXT  : (~'{' | '{' ~'{')+ ;
 
 mode EXPR;
+CLOSE_TRIM : '-}}' -> popMode;
 CLOSE   : '}}' -> popMode;
 IF      : 'if';
 ELSE    : 'else';
@@ -31,3 +33,6 @@ STRING  : '"' (~["\\] | '\\' .)* '"';
 IDENT   : [a-zA-Z_][a-zA-Z0-9_]*;
 COMMENT : '/*' .*? '*/' -> skip;
 WS      : [ \t\r\n]+ -> skip;
+
+open  : OPEN | OPEN_TRIM;
+close : CLOSE | CLOSE_TRIM;

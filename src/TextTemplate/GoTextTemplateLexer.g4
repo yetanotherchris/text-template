@@ -1,9 +1,11 @@
 lexer grammar GoTextTemplateLexer;
 
+OPEN_TRIM : '{{-' -> pushMode(EXPR);
 OPEN  : '{{' -> pushMode(EXPR);
 TEXT  : (~'{' | '{' ~'{')+ ;
 
 mode EXPR;
+CLOSE_TRIM : '-}}' -> popMode;
 CLOSE   : '}}' -> popMode;
 IF      : 'if';
 ELSE    : 'else';

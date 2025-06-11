@@ -85,4 +85,16 @@ public interface IGoTextTemplateParserVisitor<Result> : IParseTreeVisitor<Result
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitForBlock([NotNull] GoTextTemplateParser.ForBlockContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.open"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitOpen([NotNull] GoTextTemplateParser.OpenContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.close"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitClose([NotNull] GoTextTemplateParser.CloseContext context);
 }
