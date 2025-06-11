@@ -7,3 +7,6 @@ See if Codex can port Go's template package to C#:
 This repository now only includes a minimal example. The
 `TemplateEngine.Process` helper performs simple variable substitution by
 parsing templates with the `GoTemplateLexer` and `GoTemplateParser`.
+
+Supported built-in functions include `eq`, `ne`, numeric comparisons `lt`, `le`,
+`gt`, `ge`, logical operations `and`, `or` and negation `not`.

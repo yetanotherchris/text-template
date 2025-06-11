@@ -301,6 +301,44 @@ public static class TemplateEngine
                 return Equals(left, right);
             }
 
+            if (context.NE() != null)
+            {
+                var left = EvaluateValue(context.value(0));
+                var right = EvaluateValue(context.value(1));
+                return !Equals(left, right);
+            }
+
+            if (context.LT() != null || context.LE() != null ||
+                context.GT() != null || context.GE() != null)
+            {
+                var left = EvaluateValue(context.value(0));
+                var right = EvaluateValue(context.value(1));
+                if (left is IComparable l && right is IComparable r)
+                {
+                    int cmp = l.CompareTo(r);
+                    if (context.LT() != null) return cmp < 0;
+                    if (context.LE() != null) return cmp <= 0;
+                    if (context.GT() != null) return cmp > 0;
+                    if (context.GE() != null) return cmp >= 0;
+                }
+                return false;
+            }
+
+            if (context.AND() != null)
+            {
+                return IsTrue(EvaluateExpr(context.expr(0))) && IsTrue(EvaluateExpr(context.expr(1)));
+            }
+
+            if (context.OR() != null)
+            {
+                return IsTrue(EvaluateExpr(context.expr(0))) || IsTrue(EvaluateExpr(context.expr(1)));
+            }
+
+            if (context.NOT() != null)
+            {
+                return !IsTrue(EvaluateExpr(context.expr(0)));
+            }
+
             return null;
         }
 
