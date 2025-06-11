@@ -20,6 +20,7 @@ public static class TemplateEngine
     public static string Process(string templateString, IDictionary<string, object> data)
     {
         templateString = PreprocessWhitespace(templateString);
+        templateString = PreprocessComments(templateString);
         AntlrInputStream inputStream = new(templateString);
         var lexer = new GoTextTemplateLexer(inputStream);
         var tokens = new CommonTokenStream(lexer);
@@ -68,6 +69,11 @@ public static class TemplateEngine
             i++;
         }
         return sb.ToString();
+    }
+
+    private static string PreprocessComments(string template)
+    {
+        return Regex.Replace(template, "\\{\\{-?\\s*/\\*.*?\\*/\\s*-?\\}\\}", string.Empty, RegexOptions.Singleline);
     }
 
     private static IDictionary<string, object> ToDictionary(object model)

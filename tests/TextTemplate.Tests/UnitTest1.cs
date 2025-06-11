@@ -275,4 +275,20 @@ Josie";
         });
         Assert.Equal("Empty", result);
     }
+
+    [Fact]
+    public void AntlrTemplate_BasicComment()
+    {
+        const string tmpl = "Hello {{/* ignore */}}World";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
+        Assert.Equal("Hello World", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_TrimmedComment()
+    {
+        const string tmpl = "A {{-/* c */-}} B";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
+        Assert.Equal("AB", result);
+    }
 }
