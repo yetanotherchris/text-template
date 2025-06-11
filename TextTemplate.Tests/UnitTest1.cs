@@ -94,8 +94,27 @@ Josie";
         var lexer = new GoTemplateLexer(input);
         var tokens = new CommonTokenStream(lexer);
         var parser = new GoTemplateParser(tokens);
-        parser.template();
+        var tree = parser.template();
         Assert.Equal(0, parser.NumberOfSyntaxErrors);
+        Assert.Equal("(template (element Hello world))", tree.ToStringTree(parser));
+    }
+
+    [Fact]
+    public void AntlrLexer_TokenizesAction()
+    {
+        const string text = "Hello {{.Name}}!";
+        var input = new AntlrInputStream(text);
+        var lexer = new GoTemplateLexer(input);
+        var tokens = new List<IToken>();
+        IToken t;
+        while ((t = lexer.NextToken()).Type != TokenConstants.EOF)
+            tokens.Add(t);
+
+        Assert.Collection(tokens,
+            tok => Assert.Equal(GoTemplateLexer.TEXT, tok.Type),
+            tok => Assert.Equal(GoTemplateLexer.LEFT_DELIM, tok.Type),
+            tok => Assert.Equal(GoTemplateLexer.TEXT, tok.Type)
+        );
     }
 
     [Fact]
