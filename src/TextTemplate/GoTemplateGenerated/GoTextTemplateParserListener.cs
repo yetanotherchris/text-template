@@ -81,6 +81,26 @@ public interface IGoTextTemplateParserListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitPath([NotNull] GoTextTemplateParser.PathContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterExpr([NotNull] GoTextTemplateParser.ExprContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitExpr([NotNull] GoTextTemplateParser.ExprContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.value"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterValue([NotNull] GoTextTemplateParser.ValueContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.value"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitValue([NotNull] GoTextTemplateParser.ValueContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.ifBlock"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -120,4 +140,24 @@ public interface IGoTextTemplateParserListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitForBlock([NotNull] GoTextTemplateParser.ForBlockContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.open"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterOpen([NotNull] GoTextTemplateParser.OpenContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.open"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitOpen([NotNull] GoTextTemplateParser.OpenContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.close"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterClose([NotNull] GoTextTemplateParser.CloseContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.close"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitClose([NotNull] GoTextTemplateParser.CloseContext context);
 }

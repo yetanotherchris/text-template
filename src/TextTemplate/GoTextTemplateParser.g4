@@ -9,9 +9,16 @@ placeholder : open path close;
 
 path : (DOT? IDENT) ( (DOT IDENT) | (LBRACK (NUMBER | STRING | IDENT) RBRACK) )*;
 
-ifBlock : open IF path close content (elseIfBlock)* (elseBlock)? open END close;
+expr : path
+     | EQ value value;
 
-elseIfBlock : open ELSE IF path close content;
+value : path
+      | NUMBER
+      | STRING
+      | BOOLEAN;
+ifBlock : open IF expr close content (elseIfBlock)* (elseBlock)? open END close;
+
+elseIfBlock : open ELSE IF expr close content;
 
 elseBlock : open ELSE close content;
 
