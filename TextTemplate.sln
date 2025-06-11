@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextTemplate", "TextTemplate\TextTemplate.csproj", "{C1763E62-0CE4-4158-B4E8-B97D51F70F49}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextTemplate", "src\TextTemplate\TextTemplate.csproj", "{C1763E62-0CE4-4158-B4E8-B97D51F70F49}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextTemplate.Tests", "TextTemplate.Tests\TextTemplate.Tests.csproj", "{DCC254BC-7E9C-4F0F-B5CB-14854AFAD207}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextTemplate.Tests", "tests\TextTemplate.Tests\TextTemplate.Tests.csproj", "{DCC254BC-7E9C-4F0F-B5CB-14854AFAD207}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -19,7 +19,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TextTemplate\TextTemplate.csproj" />
+    <ProjectReference Include="..\..\src\TextTemplate\TextTemplate.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="TestData\full_template.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\full_template_expected.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
