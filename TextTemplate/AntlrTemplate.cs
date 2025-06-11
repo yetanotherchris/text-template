@@ -6,8 +6,8 @@ using Antlr4.Runtime.Tree;
 namespace TextTemplate;
 
 /// <summary>
-/// Simple template processor that uses the generated GoTemplate parser
-/// to replace {{variable}} tokens with values from a dictionary.
+/// Simple template processor that uses a small ANTLR grammar
+/// to replace {{variable}} tokens and evaluate {{if}} blocks.
 /// </summary>
 public static class AntlrTemplate
 {
@@ -18,23 +18,27 @@ public static class AntlrTemplate
     public static string Process(string templateString, IDictionary<string, object> data)
     {
         AntlrInputStream inputStream = new(templateString);
-        var lexer = new GoTemplateLexer(inputStream);
+        var lexer = new SimpleTemplateLexer(inputStream);
         var tokens = new CommonTokenStream(lexer);
-        var parser = new GoTemplateParser(tokens);
+        var parser = new SimpleTemplateParser(tokens);
         IParseTree tree = parser.template();
 
         var visitor = new ReplacementVisitor(data);
-        visitor.Visit(tree); // parse tree is currently unused
-
-        return System.Text.RegularExpressions.Regex.Replace(
-            templateString,
-            @"{{\s*\.?(?<name>[a-zA-Z_][a-zA-Z0-9_]*)\s*}}",
-            m => data.TryGetValue(m.Groups["name"].Value, out var val)
-                ? val?.ToString() ?? string.Empty
-                : "{{UNDEFINED:" + m.Groups["name"].Value + "}}");
+        return visitor.Visit(tree);
     }
 
-    private class ReplacementVisitor : GoTemplateBaseVisitor<string>
+    private static bool IsTrue(object? value)
+    {
+        return value switch
+        {
+            bool b => b,
+            string s when bool.TryParse(s, out var b) => b,
+            int i => i != 0,
+            _ => false
+        };
+    }
+
+    private class ReplacementVisitor : SimpleTemplateParserBaseVisitor<string>
     {
         private readonly IDictionary<string, object> _data;
 
@@ -43,37 +47,44 @@ public static class AntlrTemplate
             _data = data;
         }
 
-        public override string VisitTemplate(GoTemplateParser.TemplateContext context)
+        public override string VisitTemplate(SimpleTemplateParser.TemplateContext context)
         {
             var sb = new StringBuilder();
-            foreach (var elem in context.element())
-                sb.Append(Visit(elem));
+            foreach (var part in context.content().part())
+                sb.Append(Visit(part));
             return sb.ToString();
         }
 
-        public override string VisitElement(GoTemplateParser.ElementContext context)
+        public override string VisitPart(SimpleTemplateParser.PartContext context)
         {
             if (context.TEXT() != null)
                 return context.TEXT().GetText();
-            if (context.action() != null)
-                return Visit(context.action());
+            if (context.placeholder() != null)
+                return Visit(context.placeholder());
+            if (context.ifBlock() != null)
+                return Visit(context.ifBlock());
             return string.Empty;
         }
 
-        public override string VisitAction(GoTemplateParser.ActionContext context)
+        public override string VisitPlaceholder(SimpleTemplateParser.PlaceholderContext context)
         {
-            // Only handle simple variable actions of the form {{ name }} or {{ .name }}
-            if (context.pipeline() != null)
-            {
-                var text = context.pipeline().GetText();
-                var key = text.TrimStart('.');
-                System.Console.Error.WriteLine($"VAR: '{text}' => '{key}'");
-                if (_data.TryGetValue(key, out var value))
-                    return value?.ToString() ?? string.Empty;
-                return "{{UNDEFINED:" + key + "}}";
-            }
-            // For unsupported actions return them unchanged
-            return context.GetText();
+            var text = context.IDENT()?.GetText() ?? context.DOTIDENT()?.GetText();
+            var key = text!.TrimStart('.');
+            if (_data.TryGetValue(key, out var value))
+                return value?.ToString() ?? string.Empty;
+            return "{{UNDEFINED:" + key + "}}";
+        }
+
+        public override string VisitIfBlock(SimpleTemplateParser.IfBlockContext context)
+        {
+            var text = context.IDENT()?.GetText() ?? context.DOTIDENT()?.GetText();
+            var key = text!.TrimStart('.');
+            bool cond = _data.TryGetValue(key, out var val) && IsTrue(val);
+            if (cond)
+                return Visit(context.content(0));
+            if (context.ELSE() != null)
+                return Visit(context.content(1));
+            return string.Empty;
         }
     }
 }
