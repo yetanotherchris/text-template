@@ -17,7 +17,8 @@ public class AntlrTemplateTests
             {"itemCount", "3"},
             {"total", "29.99"}
         };
-        var result = SimpleAntlrTemplate.Process(tmpl, data);
+        var tpl = Template.New("t").Parse(tmpl);
+        var result = tpl.Execute(data);
         Assert.Equal("Hello John Doe, your order #12345 for 3 items totaling $29.99 has been processed.", result);
     }
 }

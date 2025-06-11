@@ -1,7 +1,0 @@
-OPEN=1
-TEXT=2
-IDENT=3
-CLOSE=4
-WS=5
-'{{'=1
-'}}'=4
