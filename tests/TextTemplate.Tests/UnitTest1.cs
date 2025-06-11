@@ -19,7 +19,7 @@ public class UnitTest1
     public void Template_ReturnsPlainTextUnchanged()
     {
         const string text = "Hello world";
-        var result = AntlrTemplate.Process(text, new Dictionary<string, object>());
+        var result = TemplateEngine.Process(text, new Dictionary<string, object>());
         Assert.Equal("Hello world", result);
     }
 
@@ -27,7 +27,7 @@ public class UnitTest1
     public void Template_ReplacesVariable()
     {
         const string text = "Hello {{.Name}}!";
-        var result = AntlrTemplate.Process(text, new Dictionary<string, object>
+        var result = TemplateEngine.Process(text, new Dictionary<string, object>
         {
             ["Name"] = "World"
         });
@@ -39,7 +39,7 @@ public class UnitTest1
     public void AntlrTemplate_ReplacesMultipleVariables()
     {
         const string text = "Hello {{.Name}}, you brought a {{.Gift}}.";
-        var result = AntlrTemplate.Process(text, new Dictionary<string, object>
+        var result = TemplateEngine.Process(text, new Dictionary<string, object>
         {
             ["Name"] = "Alice",
             ["Gift"] = "book"
@@ -60,7 +60,7 @@ Thank you for the lovely {{ .Gift }}.
 Best wishes,
 Josie";
 
-        var result = AntlrTemplate.Process(letter, new Dictionary<string, object>
+        var result = TemplateEngine.Process(letter, new Dictionary<string, object>
         {
             ["Name"] = "Bob",
             ["Gift"] = "toaster",
@@ -80,7 +80,7 @@ Josie";
     public void AntlrTemplate_HandlesForLoop()
     {
         const string tmpl = "Numbers: {{ for n in Items }}{{ n }},{{ end }}";
-        var result = AntlrTemplate.Process(tmpl, new Dictionary<string, object>
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
         {
             ["Items"] = new[] { 1, 2, 3 }
         });
@@ -91,7 +91,7 @@ Josie";
     public void AntlrTemplate_NestedField()
     {
         const string tmpl = "User: {{ .User.Name }}";
-        var result = AntlrTemplate.Process(tmpl, new Dictionary<string, object>
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
         {
             ["User"] = new Recipient { Name = "John" }
         });
@@ -102,7 +102,7 @@ Josie";
     public void AntlrTemplate_ElseIfBlock()
     {
         const string tmpl = "{{ if .A }}A{{ else if .B }}B{{ else }}C{{ end }}";
-        var result = AntlrTemplate.Process(tmpl, new Dictionary<string, object>
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
         {
             ["A"] = false,
             ["B"] = true
@@ -114,10 +114,19 @@ Josie";
     public void AntlrTemplate_ForLoopElse()
     {
         const string tmpl = "{{ for x in Items }}X{{ else }}Empty{{ end }}";
-        var result = AntlrTemplate.Process(tmpl, new Dictionary<string, object>
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
         {
             ["Items"] = new int[0]
         });
         Assert.Equal("Empty", result);
+    }
+
+    [Fact]
+    public void TemplateEngine_UsesObjectProperties()
+    {
+        const string tmpl = "Hello {{ .Name }}!";
+        var model = new Recipient { Name = "World" };
+        var result = TemplateEngine.Process(tmpl, model);
+        Assert.Equal("Hello World!", result);
     }
 }

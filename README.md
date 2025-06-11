@@ -5,5 +5,5 @@ See if Codex can port Go's template package to C#:
 - https://cs.opensource.google/go/go/+/refs/tags/go1.24.4:src/text/template/template.go
 
 This repository now only includes a minimal example. The
-`AntlrTemplate.Process` helper performs simple variable substitution by
+`TemplateEngine.Process` helper performs simple variable substitution by
 parsing templates with the `GoTemplateLexer` and `GoTemplateParser`.

@@ -17,7 +17,7 @@ public class FullTemplateFromFileTests
         string template = File.ReadAllText(templatePath);
         string expected = File.ReadAllText(expectedPath);
 
-        var result = AntlrTemplate.Process(template, new Dictionary<string, object>
+        var result = TemplateEngine.Process(template, new Dictionary<string, object>
         {
             ["Name"] = "Bob",
             ["Gift"] = "toaster",
