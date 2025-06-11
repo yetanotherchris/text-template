@@ -75,4 +75,15 @@ Josie";
 
         Assert.Equal(expected, result);
     }
+
+    [Fact]
+    public void AntlrTemplate_HandlesForLoop()
+    {
+        const string tmpl = "Numbers: {{ for n in Items }}{{ n }},{{ end }}";
+        var result = AntlrTemplate.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new[] { 1, 2, 3 }
+        });
+        Assert.Equal("Numbers: 1,2,3,", result);
+    }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections;
 using System.Text;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
@@ -18,9 +19,9 @@ public static class AntlrTemplate
     public static string Process(string templateString, IDictionary<string, object> data)
     {
         AntlrInputStream inputStream = new(templateString);
-        var lexer = new SimpleTemplateLexer(inputStream);
+        var lexer = new GoTextTemplateLexer(inputStream);
         var tokens = new CommonTokenStream(lexer);
-        var parser = new SimpleTemplateParser(tokens);
+        var parser = new GoTextTemplateParser(tokens);
         IParseTree tree = parser.template();
 
         var visitor = new ReplacementVisitor(data);
@@ -38,7 +39,7 @@ public static class AntlrTemplate
         };
     }
 
-    private class ReplacementVisitor : SimpleTemplateParserBaseVisitor<string>
+    private class ReplacementVisitor : GoTextTemplateParserBaseVisitor<string>
     {
         private readonly IDictionary<string, object> _data;
 
@@ -47,7 +48,7 @@ public static class AntlrTemplate
             _data = data;
         }
 
-        public override string VisitTemplate(SimpleTemplateParser.TemplateContext context)
+        public override string VisitTemplate(GoTextTemplateParser.TemplateContext context)
         {
             var sb = new StringBuilder();
             foreach (var part in context.content().part())
@@ -55,7 +56,15 @@ public static class AntlrTemplate
             return sb.ToString();
         }
 
-        public override string VisitPart(SimpleTemplateParser.PartContext context)
+        public override string VisitContent(GoTextTemplateParser.ContentContext context)
+        {
+            var sb = new StringBuilder();
+            foreach (var part in context.part())
+                sb.Append(Visit(part));
+            return sb.ToString();
+        }
+
+        public override string VisitPart(GoTextTemplateParser.PartContext context)
         {
             if (context.TEXT() != null)
                 return context.TEXT().GetText();
@@ -63,10 +72,12 @@ public static class AntlrTemplate
                 return Visit(context.placeholder());
             if (context.ifBlock() != null)
                 return Visit(context.ifBlock());
+            if (context.forBlock() != null)
+                return Visit(context.forBlock());
             return string.Empty;
         }
 
-        public override string VisitPlaceholder(SimpleTemplateParser.PlaceholderContext context)
+        public override string VisitPlaceholder(GoTextTemplateParser.PlaceholderContext context)
         {
             var text = context.IDENT()?.GetText() ?? context.DOTIDENT()?.GetText();
             var key = text!.TrimStart('.');
@@ -75,7 +86,7 @@ public static class AntlrTemplate
             return "{{UNDEFINED:" + key + "}}";
         }
 
-        public override string VisitIfBlock(SimpleTemplateParser.IfBlockContext context)
+        public override string VisitIfBlock(GoTextTemplateParser.IfBlockContext context)
         {
             var text = context.IDENT()?.GetText() ?? context.DOTIDENT()?.GetText();
             var key = text!.TrimStart('.');
@@ -85,6 +96,27 @@ public static class AntlrTemplate
             if (context.ELSE() != null)
                 return Visit(context.content(1));
             return string.Empty;
+        }
+
+        public override string VisitForBlock(GoTextTemplateParser.ForBlockContext context)
+        {
+            var listToken = context.IDENT(1)?.GetText() ?? context.DOTIDENT()?.GetText();
+            var listKey = listToken!.TrimStart('.');
+            if (!_data.TryGetValue(listKey, out var value) || value is not System.Collections.IEnumerable enumerable)
+                return string.Empty;
+
+            var itemName = context.IDENT(0).GetText();
+            var sb = new StringBuilder();
+            foreach (var item in enumerable)
+            {
+                var child = new Dictionary<string, object>(_data)
+                {
+                    [itemName] = item!,
+                };
+                var v = new ReplacementVisitor(child);
+                sb.Append(v.Visit(context.content()));
+            }
+            return sb.ToString();
         }
     }
 }

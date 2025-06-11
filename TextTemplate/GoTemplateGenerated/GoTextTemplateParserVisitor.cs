@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generated from TextTemplate/SimpleTemplateParser.g4 by ANTLR 4.9.2
+// Generated from GoTextTemplateParser.g4 by ANTLR 4.9.2
 
 // Unreachable code detected
 #pragma warning disable 0162
@@ -25,40 +25,46 @@ using IToken = Antlr4.Runtime.IToken;
 
 /// <summary>
 /// This interface defines a complete generic visitor for a parse tree produced
-/// by <see cref="SimpleTemplateParser"/>.
+/// by <see cref="GoTextTemplateParser"/>.
 /// </summary>
 /// <typeparam name="Result">The return type of the visit operation.</typeparam>
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.9.2")]
 [System.CLSCompliant(false)]
-public interface ISimpleTemplateParserVisitor<Result> : IParseTreeVisitor<Result> {
+public interface IGoTextTemplateParserVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="SimpleTemplateParser.template"/>.
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.template"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitTemplate([NotNull] SimpleTemplateParser.TemplateContext context);
+	Result VisitTemplate([NotNull] GoTextTemplateParser.TemplateContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="SimpleTemplateParser.content"/>.
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.content"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitContent([NotNull] SimpleTemplateParser.ContentContext context);
+	Result VisitContent([NotNull] GoTextTemplateParser.ContentContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="SimpleTemplateParser.part"/>.
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.part"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitPart([NotNull] SimpleTemplateParser.PartContext context);
+	Result VisitPart([NotNull] GoTextTemplateParser.PartContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="SimpleTemplateParser.placeholder"/>.
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.placeholder"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitPlaceholder([NotNull] SimpleTemplateParser.PlaceholderContext context);
+	Result VisitPlaceholder([NotNull] GoTextTemplateParser.PlaceholderContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="SimpleTemplateParser.ifBlock"/>.
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.ifBlock"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitIfBlock([NotNull] SimpleTemplateParser.IfBlockContext context);
+	Result VisitIfBlock([NotNull] GoTextTemplateParser.IfBlockContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.forBlock"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitForBlock([NotNull] GoTextTemplateParser.ForBlockContext context);
 }
