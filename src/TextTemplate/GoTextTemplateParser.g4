@@ -9,8 +9,18 @@ placeholder : open path close;
 
 path : (DOT? IDENT) ( (DOT IDENT) | (LBRACK (NUMBER | STRING | IDENT) RBRACK) )*;
 
-expr : path
-     | EQ value value;
+expr
+    : path
+    | EQ value value
+    | NE value value
+    | LT value value
+    | LE value value
+    | GT value value
+    | GE value value
+    | AND expr expr
+    | OR expr expr
+    | NOT expr
+    ;
 
 value : path
       | NUMBER

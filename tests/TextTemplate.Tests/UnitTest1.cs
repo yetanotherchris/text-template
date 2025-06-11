@@ -122,6 +122,53 @@ Josie";
     }
 
     [Fact]
+    public void AntlrTemplate_NotEqualCondition()
+    {
+        const string tmpl = "{{ if ne .Count 0 }}non-zero{{ else }}zero{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Count"] = 5
+        });
+        Assert.Equal("non-zero", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_ComparisonOperators()
+    {
+        const string tmpl = "{{ if lt .A .B }}lt{{ end }}{{ if le .A .A }}le{{ end }}" +
+            "{{ if gt .B .A }}gt{{ end }}{{ if ge .B .B }}ge{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["A"] = 1,
+            ["B"] = 2
+        });
+        Assert.Equal("ltlegtge", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_LogicalOperations()
+    {
+        const string tmpl = "{{ if and .IsActive .IsValid }}ok{{ else }}bad{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["IsActive"] = true,
+            ["IsValid"] = true
+        });
+        Assert.Equal("ok", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_LogicalNegation()
+    {
+        const string tmpl = "{{ if not .Hidden }}show{{ else }}hide{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Hidden"] = false
+        });
+        Assert.Equal("show", result);
+    }
+
+    [Fact]
     public void AntlrTemplate_ExistenceCheck()
     {
         const string tmpl = "{{ if .User }}Yes{{ else }}No{{ end }}";
