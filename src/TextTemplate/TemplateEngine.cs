@@ -10,7 +10,7 @@ namespace TextTemplate;
 /// Simple template processor that uses a small ANTLR grammar
 /// to replace {{variable}} tokens and evaluate {{if}} blocks.
 /// </summary>
-public static class AntlrTemplate
+public static class TemplateEngine
 {
     /// <summary>
     /// Processes <paramref name="templateString"/> by substituting tokens with values
@@ -26,6 +26,36 @@ public static class AntlrTemplate
 
         var visitor = new ReplacementVisitor(data);
         return visitor.Visit(tree);
+    }
+
+    /// <summary>
+    /// Processes <paramref name="templateString"/> using the public properties
+    /// and fields of <paramref name="model"/> as template variables.
+    /// </summary>
+    public static string Process<T>(string templateString, T model)
+    {
+        IDictionary<string, object> dict = model as IDictionary<string, object> ??
+            ToDictionary(model!);
+        return Process(templateString, dict);
+    }
+
+    private static IDictionary<string, object> ToDictionary(object model)
+    {
+        var dict = new Dictionary<string, object>();
+        var type = model.GetType();
+        foreach (var prop in type.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
+        {
+            var value = prop.GetValue(model);
+            if (value != null)
+                dict[prop.Name] = value;
+        }
+        foreach (var field in type.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
+        {
+            var value = field.GetValue(model);
+            if (value != null)
+                dict[field.Name] = value;
+        }
+        return dict;
     }
 
     private static bool IsTrue(object? value)
