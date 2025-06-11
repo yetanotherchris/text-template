@@ -12,6 +12,12 @@ public class Recipient
     public bool Attended { get; set; }
 }
 
+public class User
+{
+    public string Name { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+}
+
 public class UnitTest1
 {
 
@@ -321,5 +327,59 @@ Josie";
         const string tmpl = "A {{-/* c */-}} B";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
         Assert.Equal("AB", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_NestedConditions()
+    {
+        const string tmpl = @"{{- if .User -}}
+	{{- if .User.IsActive -}}
+		Active user: {{ .User.Name }}
+	{{- else -}}
+		Inactive user
+{{- end -}}
+{{- end -}}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["User"] = new User { Name = "Alice", IsActive = true }
+        });
+
+		        Assert.Equal("Active user: Alice", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_ComplexBooleanExpression()
+    {
+        const string tmpl = @"{{- if and (eq .Status ""active"") (gt .Count 0) -}}
+	Status is active and count is positive
+{{- end -}}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Status"] = "active",
+            ["Count"] = 2
+        });
+
+	        Assert.Equal("Status is active and count is positive", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_ZeroValueCheck()
+    {
+        const string tmpl = @"{{- if .Count -}}
+	Count: {{ .Count }}
+	{{- else -}}
+	No items
+{{- end -}}";
+        var result1 = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Count"] = 3
+        });
+        Assert.Equal("Count: 3", result1);
+
+        var result2 = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Count"] = 0
+        });
+	        Assert.Equal("No items", result2);
     }
 }
