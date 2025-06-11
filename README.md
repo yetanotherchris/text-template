@@ -10,5 +10,6 @@ now supports:
 - Custom delimiters via `Delims`.
 - Template comments using `{{/* comment */}}`.
 - A small set of built-in functions (`join`, `println`, `len`, `upper`, `lower`,
-  `index`).
+  `index`, `eq`).
 - Simple pipeline expressions (`{{ .Name | upper }}`).
+- Basic loop control with `{{break}}` and `{{continue}}` inside `range`.
