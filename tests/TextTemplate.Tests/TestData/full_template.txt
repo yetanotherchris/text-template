@@ -1,0 +1,8 @@
+Dear {{ .Name }},
+{{ if .Attended }}
+It was a pleasure to see you.
+{{ else }}
+Sorry you couldn't make it.
+{{ end }}
+You brought: {{ for item in Items }}{{ item }},{{ end }}
+Thank you for the lovely {{ .Gift }}.

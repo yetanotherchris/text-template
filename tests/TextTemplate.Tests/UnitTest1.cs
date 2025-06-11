@@ -38,7 +38,7 @@ public class UnitTest1
     [Fact]
     public void AntlrTemplate_ReplacesMultipleVariables()
     {
-        const string text = "Hello {{Name}}, you brought a {{Gift}}.";
+        const string text = "Hello {{.Name}}, you brought a {{.Gift}}.";
         var result = AntlrTemplate.Process(text, new Dictionary<string, object>
         {
             ["Name"] = "Alice",
