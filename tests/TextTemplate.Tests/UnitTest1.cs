@@ -211,6 +211,18 @@ Josie";
     }
 
     [Fact]
+    public void AntlrTemplate_ArrayIndexingVariable()
+    {
+        const string tmpl = "Current: {{ .Items[.CurrentIndex] }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new[] { "zero", "one", "two" },
+            ["CurrentIndex"] = 2
+        });
+        Assert.Equal("Current: two", result);
+    }
+
+    [Fact]
     public void AntlrTemplate_MapAccess()
     {
         const string tmpl = "Value: {{ .Data.key }}";
@@ -219,6 +231,17 @@ Josie";
             ["Data"] = new Dictionary<string, object> { ["key"] = "val" }
         });
         Assert.Equal("Value: val", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_MapAccessSpecialKey()
+    {
+        const string tmpl = "Val: {{ .Data[\"key-with-dashes\"] }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Data"] = new Dictionary<string, object> { ["key-with-dashes"] = "x" }
+        });
+        Assert.Equal("Val: x", result);
     }
 
     [Fact]
@@ -282,6 +305,14 @@ Josie";
         const string tmpl = "Hello {{/* ignore */}}World";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
         Assert.Equal("Hello World", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_MissingFieldAccess()
+    {
+        const string tmpl = "Missing: {{ .MaybeNil.Field }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
+        Assert.Equal("Missing: ", result);
     }
 
     [Fact]

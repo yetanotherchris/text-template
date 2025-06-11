@@ -10,3 +10,6 @@ parsing templates with the `GoTemplateLexer` and `GoTemplateParser`.
 
 Supported built-in functions include `eq`, `ne`, numeric comparisons `lt`, `le`,
 `gt`, `ge`, logical operations `and`, `or` and negation `not`.
+
+Variable access supports nested fields, array indexing with variables,
+string keys using quotes, and safely returns empty strings for missing fields.

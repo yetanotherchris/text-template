@@ -284,6 +284,11 @@ public static class TemplateEngine
         private object? ResolvePath(GoTextTemplateParser.PathContext context)
         {
             string text = context.GetText();
+            return ResolvePath(text);
+        }
+
+        private object? ResolvePath(string text)
+        {
             var segments = ParseSegments(text);
             object? current = _data;
             foreach (var seg in segments)
@@ -376,6 +381,12 @@ public static class TemplateEngine
             return null;
         }
 
+        private sealed class PathReference
+        {
+            public string Path { get; }
+            public PathReference(string path) => Path = path;
+        }
+
         private static List<object> ParseSegments(string text)
         {
             var result = new List<object>();
@@ -403,9 +414,11 @@ public static class TemplateEngine
                     {
                         int start = i;
                         while (i < text.Length && text[i] != ']') i++;
-                        var key = text.Substring(start, i - start);
+                        var key = text.Substring(start, i - start).Trim();
                         if (int.TryParse(key, out int idx))
                             result.Add(idx);
+                        else if (key.StartsWith("."))
+                            result.Add(new PathReference(key));
                         else
                             result.Add(key);
                     }
@@ -422,7 +435,7 @@ public static class TemplateEngine
             return result;
         }
 
-        private static object? ResolveSegment(object? current, object segment)
+        private object? ResolveSegment(object? current, object segment)
         {
             if (current == null) return null;
 
@@ -432,6 +445,40 @@ public static class TemplateEngine
                 {
                     return idx >= 0 && idx < list.Count ? list[idx] : null;
                 }
+                return null;
+            }
+
+            if (segment is PathReference pathRef)
+            {
+                var keyObj = ResolvePath(pathRef.Path);
+                if (keyObj == null)
+                    return null;
+
+                if (keyObj is int dynIdx && current is IList listDyn)
+                {
+                    return dynIdx >= 0 && dynIdx < listDyn.Count ? listDyn[dynIdx] : null;
+                }
+
+                var dynKey = keyObj.ToString()!;
+                if (current is IDictionary<string, object> dictDyn)
+                {
+                    return dictDyn.TryGetValue(dynKey, out var val) ? val : null;
+                }
+
+                if (current is IDictionary mapDyn)
+                {
+                    return mapDyn.Contains(dynKey) ? mapDyn[dynKey] : null;
+                }
+
+                var typeDyn = current.GetType();
+                var propDyn = typeDyn.GetProperty(dynKey);
+                if (propDyn != null)
+                    return propDyn.GetValue(current);
+
+                var fieldDyn = typeDyn.GetField(dynKey);
+                if (fieldDyn != null)
+                    return fieldDyn.GetValue(current);
+
                 return null;
             }
 
