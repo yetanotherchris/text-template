@@ -184,4 +184,48 @@ Josie";
         });
         Assert.Equal("AXB", result);
     }
+
+    [Fact]
+    public void AntlrTemplate_RangeArray()
+    {
+        const string tmpl = "{{ range v := .Items }}{{ v }};{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new[] { "a", "b", "c" }
+        });
+        Assert.Equal("a;b;c;", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_RangeArrayIndex()
+    {
+        const string tmpl = "{{ range i, v := .Items }}{{ i }}={{ v }},{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new[] { "x", "y" }
+        });
+        Assert.Equal("0=x,1=y,", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_RangeMapKeyValue()
+    {
+        const string tmpl = "{{ range k, v := .Data }}{{ k }}={{ v }},{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Data"] = new Dictionary<string, object> { ["a"] = 1, ["b"] = 2 }
+        });
+        Assert.Equal("a=1,b=2,", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_RangeElse()
+    {
+        const string tmpl = "{{ range .Empty }}X{{ else }}Empty{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Empty"] = new int[0]
+        });
+        Assert.Equal("Empty", result);
+    }
 }

@@ -168,6 +168,54 @@ public partial class GoTextTemplateParserBaseListener : IGoTextTemplateParserLis
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitForBlock([NotNull] GoTextTemplateParser.ForBlockContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.rangeBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterRangeBlock([NotNull] GoTextTemplateParser.RangeBlockContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.rangeBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitRangeBlock([NotNull] GoTextTemplateParser.RangeBlockContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.rangeClause"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterRangeClause([NotNull] GoTextTemplateParser.RangeClauseContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.rangeClause"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitRangeClause([NotNull] GoTextTemplateParser.RangeClauseContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.varList"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterVarList([NotNull] GoTextTemplateParser.VarListContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.varList"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitVarList([NotNull] GoTextTemplateParser.VarListContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.varName"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterVarName([NotNull] GoTextTemplateParser.VarNameContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.varName"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitVarName([NotNull] GoTextTemplateParser.VarNameContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.open"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
