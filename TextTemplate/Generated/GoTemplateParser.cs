@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generated from TextTemplate/GoTemplate.g4 by ANTLR 4.13.1
+// Generated from GoTemplate.g4 by ANTLR 4.13.1
 
 // Unreachable code detected
 #pragma warning disable 0162
@@ -51,8 +51,7 @@ public partial class GoTemplateParser : Parser {
 
 	private static readonly string[] _LiteralNames = {
 		null, "'if'", "'end'", "'range'", "'with'", "'define'", "'template'", 
-		"'block'", "'else'", "'|'", "'.'", "'('", "','", "')'", "'$'", "'nil'", 
-		"'{{'", "'}}'"
+		"'block'", "'else'", "'|'", "'.'", "'('", "','", "')'", "'$'", "'nil'"
 	};
 	private static readonly string[] _SymbolicNames = {
 		null, null, null, null, null, null, null, null, null, null, null, null, 
