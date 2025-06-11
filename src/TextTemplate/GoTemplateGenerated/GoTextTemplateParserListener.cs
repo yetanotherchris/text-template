@@ -71,6 +71,16 @@ public interface IGoTextTemplateParserListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitPlaceholder([NotNull] GoTextTemplateParser.PlaceholderContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.path"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterPath([NotNull] GoTextTemplateParser.PathContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.path"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitPath([NotNull] GoTextTemplateParser.PathContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.ifBlock"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -80,6 +90,26 @@ public interface IGoTextTemplateParserListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitIfBlock([NotNull] GoTextTemplateParser.IfBlockContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.elseIfBlock"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterElseIfBlock([NotNull] GoTextTemplateParser.ElseIfBlockContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.elseIfBlock"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitElseIfBlock([NotNull] GoTextTemplateParser.ElseIfBlockContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.elseBlock"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterElseBlock([NotNull] GoTextTemplateParser.ElseBlockContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.elseBlock"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitElseBlock([NotNull] GoTextTemplateParser.ElseBlockContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.forBlock"/>.
 	/// </summary>

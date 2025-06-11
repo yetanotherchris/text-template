@@ -36,21 +36,24 @@ public partial class GoTextTemplateParser : Parser {
 	protected static DFA[] decisionToDFA;
 	protected static PredictionContextCache sharedContextCache = new PredictionContextCache();
 	public const int
-		OPEN=1, TEXT=2, CLOSE=3, IF=4, ELSE=5, END=6, FOR=7, IN=8, IDENT=9, DOTIDENT=10, 
-		WS=11;
+		OPEN=1, TEXT=2, CLOSE=3, IF=4, ELSE=5, END=6, FOR=7, IN=8, DOT=9, LBRACK=10, 
+		RBRACK=11, NUMBER=12, STRING=13, IDENT=14, COMMENT=15, WS=16;
 	public const int
 		RULE_template = 0, RULE_content = 1, RULE_part = 2, RULE_placeholder = 3, 
-		RULE_ifBlock = 4, RULE_forBlock = 5;
+		RULE_path = 4, RULE_ifBlock = 5, RULE_elseIfBlock = 6, RULE_elseBlock = 7, 
+		RULE_forBlock = 8;
 	public static readonly string[] ruleNames = {
-		"template", "content", "part", "placeholder", "ifBlock", "forBlock"
+		"template", "content", "part", "placeholder", "path", "ifBlock", "elseIfBlock", 
+		"elseBlock", "forBlock"
 	};
 
 	private static readonly string[] _LiteralNames = {
-		null, "'{{'", null, "'}}'", "'if'", "'else'", "'end'", "'for'", "'in'"
+		null, "'{{'", null, "'}}'", "'if'", "'else'", "'end'", "'for'", "'in'", 
+		"'.'", "'['", "']'"
 	};
 	private static readonly string[] _SymbolicNames = {
-		null, "OPEN", "TEXT", "CLOSE", "IF", "ELSE", "END", "FOR", "IN", "IDENT", 
-		"DOTIDENT", "WS"
+		null, "OPEN", "TEXT", "CLOSE", "IF", "ELSE", "END", "FOR", "IN", "DOT", 
+		"LBRACK", "RBRACK", "NUMBER", "STRING", "IDENT", "COMMENT", "WS"
 	};
 	public static readonly IVocabulary DefaultVocabulary = new Vocabulary(_LiteralNames, _SymbolicNames);
 
@@ -118,9 +121,9 @@ public partial class GoTextTemplateParser : Parser {
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 12;
+			State = 18;
 			content();
-			State = 13;
+			State = 19;
 			Match(Eof);
 			}
 		}
@@ -173,19 +176,19 @@ public partial class GoTextTemplateParser : Parser {
 			int _alt;
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 18;
+			State = 24;
 			ErrorHandler.Sync(this);
 			_alt = Interpreter.AdaptivePredict(TokenStream,0,Context);
 			while ( _alt!=2 && _alt!=global::Antlr4.Runtime.Atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					{
 					{
-					State = 15;
+					State = 21;
 					part();
 					}
 					} 
 				}
-				State = 20;
+				State = 26;
 				ErrorHandler.Sync(this);
 				_alt = Interpreter.AdaptivePredict(TokenStream,0,Context);
 			}
@@ -241,34 +244,34 @@ public partial class GoTextTemplateParser : Parser {
 		PartContext _localctx = new PartContext(Context, State);
 		EnterRule(_localctx, 4, RULE_part);
 		try {
-			State = 25;
+			State = 31;
 			ErrorHandler.Sync(this);
 			switch ( Interpreter.AdaptivePredict(TokenStream,1,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
 				{
-				State = 21;
+				State = 27;
 				Match(TEXT);
 				}
 				break;
 			case 2:
 				EnterOuterAlt(_localctx, 2);
 				{
-				State = 22;
+				State = 28;
 				placeholder();
 				}
 				break;
 			case 3:
 				EnterOuterAlt(_localctx, 3);
 				{
-				State = 23;
+				State = 29;
 				ifBlock();
 				}
 				break;
 			case 4:
 				EnterOuterAlt(_localctx, 4);
 				{
-				State = 24;
+				State = 30;
 				forBlock();
 				}
 				break;
@@ -287,9 +290,10 @@ public partial class GoTextTemplateParser : Parser {
 
 	public partial class PlaceholderContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OPEN() { return GetToken(GoTextTemplateParser.OPEN, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public PathContext path() {
+			return GetRuleContext<PathContext>(0);
+		}
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CLOSE() { return GetToken(GoTextTemplateParser.CLOSE, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(GoTextTemplateParser.IDENT, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DOTIDENT() { return GetToken(GoTextTemplateParser.DOTIDENT, 0); }
 		public PlaceholderContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
 		{
@@ -317,23 +321,143 @@ public partial class GoTextTemplateParser : Parser {
 	public PlaceholderContext placeholder() {
 		PlaceholderContext _localctx = new PlaceholderContext(Context, State);
 		EnterRule(_localctx, 6, RULE_placeholder);
+		try {
+			EnterOuterAlt(_localctx, 1);
+			{
+			State = 33;
+			Match(OPEN);
+			State = 34;
+			path();
+			State = 35;
+			Match(CLOSE);
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			ErrorHandler.ReportError(this, re);
+			ErrorHandler.Recover(this, re);
+		}
+		finally {
+			ExitRule();
+		}
+		return _localctx;
+	}
+
+	public partial class PathContext : ParserRuleContext {
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] IDENT() { return GetTokens(GoTextTemplateParser.IDENT); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT(int i) {
+			return GetToken(GoTextTemplateParser.IDENT, i);
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] DOT() { return GetTokens(GoTextTemplateParser.DOT); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DOT(int i) {
+			return GetToken(GoTextTemplateParser.DOT, i);
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] LBRACK() { return GetTokens(GoTextTemplateParser.LBRACK); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode LBRACK(int i) {
+			return GetToken(GoTextTemplateParser.LBRACK, i);
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] RBRACK() { return GetTokens(GoTextTemplateParser.RBRACK); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode RBRACK(int i) {
+			return GetToken(GoTextTemplateParser.RBRACK, i);
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] NUMBER() { return GetTokens(GoTextTemplateParser.NUMBER); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode NUMBER(int i) {
+			return GetToken(GoTextTemplateParser.NUMBER, i);
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] STRING() { return GetTokens(GoTextTemplateParser.STRING); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode STRING(int i) {
+			return GetToken(GoTextTemplateParser.STRING, i);
+		}
+		public PathContext(ParserRuleContext parent, int invokingState)
+			: base(parent, invokingState)
+		{
+		}
+		public override int RuleIndex { get { return RULE_path; } }
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void EnterRule(IParseTreeListener listener) {
+			IGoTextTemplateParserListener typedListener = listener as IGoTextTemplateParserListener;
+			if (typedListener != null) typedListener.EnterPath(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void ExitRule(IParseTreeListener listener) {
+			IGoTextTemplateParserListener typedListener = listener as IGoTextTemplateParserListener;
+			if (typedListener != null) typedListener.ExitPath(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override TResult Accept<TResult>(IParseTreeVisitor<TResult> visitor) {
+			IGoTextTemplateParserVisitor<TResult> typedVisitor = visitor as IGoTextTemplateParserVisitor<TResult>;
+			if (typedVisitor != null) return typedVisitor.VisitPath(this);
+			else return visitor.VisitChildren(this);
+		}
+	}
+
+	[RuleVersion(0)]
+	public PathContext path() {
+		PathContext _localctx = new PathContext(Context, State);
+		EnterRule(_localctx, 8, RULE_path);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 27;
-			Match(OPEN);
-			State = 28;
+			{
+			State = 38;
+			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
-			if ( !(_la==IDENT || _la==DOTIDENT) ) {
-			ErrorHandler.RecoverInline(this);
+			if (_la==DOT) {
+				{
+				State = 37;
+				Match(DOT);
+				}
 			}
-			else {
-				ErrorHandler.ReportMatch(this);
-			    Consume();
+
+			State = 40;
+			Match(IDENT);
 			}
-			State = 29;
-			Match(CLOSE);
+			State = 49;
+			ErrorHandler.Sync(this);
+			_la = TokenStream.LA(1);
+			while (_la==DOT || _la==LBRACK) {
+				{
+				State = 47;
+				ErrorHandler.Sync(this);
+				switch (TokenStream.LA(1)) {
+				case DOT:
+					{
+					{
+					State = 42;
+					Match(DOT);
+					State = 43;
+					Match(IDENT);
+					}
+					}
+					break;
+				case LBRACK:
+					{
+					{
+					State = 44;
+					Match(LBRACK);
+					State = 45;
+					_la = TokenStream.LA(1);
+					if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << NUMBER) | (1L << STRING) | (1L << IDENT))) != 0)) ) {
+					ErrorHandler.RecoverInline(this);
+					}
+					else {
+						ErrorHandler.ReportMatch(this);
+					    Consume();
+					}
+					State = 46;
+					Match(RBRACK);
+					}
+					}
+					break;
+				default:
+					throw new NoViableAltException(this);
+				}
+				}
+				State = 51;
+				ErrorHandler.Sync(this);
+				_la = TokenStream.LA(1);
+			}
 			}
 		}
 		catch (RecognitionException re) {
@@ -353,20 +477,26 @@ public partial class GoTextTemplateParser : Parser {
 			return GetToken(GoTextTemplateParser.OPEN, i);
 		}
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IF() { return GetToken(GoTextTemplateParser.IF, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public PathContext path() {
+			return GetRuleContext<PathContext>(0);
+		}
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] CLOSE() { return GetTokens(GoTextTemplateParser.CLOSE); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CLOSE(int i) {
 			return GetToken(GoTextTemplateParser.CLOSE, i);
 		}
-		[System.Diagnostics.DebuggerNonUserCode] public ContentContext[] content() {
-			return GetRuleContexts<ContentContext>();
-		}
-		[System.Diagnostics.DebuggerNonUserCode] public ContentContext content(int i) {
-			return GetRuleContext<ContentContext>(i);
+		[System.Diagnostics.DebuggerNonUserCode] public ContentContext content() {
+			return GetRuleContext<ContentContext>(0);
 		}
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode END() { return GetToken(GoTextTemplateParser.END, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(GoTextTemplateParser.IDENT, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DOTIDENT() { return GetToken(GoTextTemplateParser.DOTIDENT, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ELSE() { return GetToken(GoTextTemplateParser.ELSE, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ElseIfBlockContext[] elseIfBlock() {
+			return GetRuleContexts<ElseIfBlockContext>();
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public ElseIfBlockContext elseIfBlock(int i) {
+			return GetRuleContext<ElseIfBlockContext>(i);
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public ElseBlockContext elseBlock() {
+			return GetRuleContext<ElseBlockContext>(0);
+		}
 		public IfBlockContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
 		{
@@ -393,50 +523,177 @@ public partial class GoTextTemplateParser : Parser {
 	[RuleVersion(0)]
 	public IfBlockContext ifBlock() {
 		IfBlockContext _localctx = new IfBlockContext(Context, State);
-		EnterRule(_localctx, 8, RULE_ifBlock);
-		int _la;
+		EnterRule(_localctx, 10, RULE_ifBlock);
 		try {
+			int _alt;
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 31;
+			State = 52;
 			Match(OPEN);
-			State = 32;
+			State = 53;
 			Match(IF);
-			State = 33;
-			_la = TokenStream.LA(1);
-			if ( !(_la==IDENT || _la==DOTIDENT) ) {
-			ErrorHandler.RecoverInline(this);
-			}
-			else {
-				ErrorHandler.ReportMatch(this);
-			    Consume();
-			}
-			State = 34;
+			State = 54;
+			path();
+			State = 55;
 			Match(CLOSE);
-			State = 35;
+			State = 56;
 			content();
-			State = 40;
+			State = 60;
 			ErrorHandler.Sync(this);
-			switch ( Interpreter.AdaptivePredict(TokenStream,2,Context) ) {
+			_alt = Interpreter.AdaptivePredict(TokenStream,5,Context);
+			while ( _alt!=2 && _alt!=global::Antlr4.Runtime.Atn.ATN.INVALID_ALT_NUMBER ) {
+				if ( _alt==1 ) {
+					{
+					{
+					State = 57;
+					elseIfBlock();
+					}
+					} 
+				}
+				State = 62;
+				ErrorHandler.Sync(this);
+				_alt = Interpreter.AdaptivePredict(TokenStream,5,Context);
+			}
+			State = 64;
+			ErrorHandler.Sync(this);
+			switch ( Interpreter.AdaptivePredict(TokenStream,6,Context) ) {
 			case 1:
 				{
-				State = 36;
-				Match(OPEN);
-				State = 37;
-				Match(ELSE);
-				State = 38;
-				Match(CLOSE);
-				State = 39;
-				content();
+				State = 63;
+				elseBlock();
 				}
 				break;
 			}
-			State = 42;
+			State = 66;
 			Match(OPEN);
-			State = 43;
+			State = 67;
 			Match(END);
-			State = 44;
+			State = 68;
 			Match(CLOSE);
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			ErrorHandler.ReportError(this, re);
+			ErrorHandler.Recover(this, re);
+		}
+		finally {
+			ExitRule();
+		}
+		return _localctx;
+	}
+
+	public partial class ElseIfBlockContext : ParserRuleContext {
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OPEN() { return GetToken(GoTextTemplateParser.OPEN, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ELSE() { return GetToken(GoTextTemplateParser.ELSE, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IF() { return GetToken(GoTextTemplateParser.IF, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public PathContext path() {
+			return GetRuleContext<PathContext>(0);
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CLOSE() { return GetToken(GoTextTemplateParser.CLOSE, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ContentContext content() {
+			return GetRuleContext<ContentContext>(0);
+		}
+		public ElseIfBlockContext(ParserRuleContext parent, int invokingState)
+			: base(parent, invokingState)
+		{
+		}
+		public override int RuleIndex { get { return RULE_elseIfBlock; } }
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void EnterRule(IParseTreeListener listener) {
+			IGoTextTemplateParserListener typedListener = listener as IGoTextTemplateParserListener;
+			if (typedListener != null) typedListener.EnterElseIfBlock(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void ExitRule(IParseTreeListener listener) {
+			IGoTextTemplateParserListener typedListener = listener as IGoTextTemplateParserListener;
+			if (typedListener != null) typedListener.ExitElseIfBlock(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override TResult Accept<TResult>(IParseTreeVisitor<TResult> visitor) {
+			IGoTextTemplateParserVisitor<TResult> typedVisitor = visitor as IGoTextTemplateParserVisitor<TResult>;
+			if (typedVisitor != null) return typedVisitor.VisitElseIfBlock(this);
+			else return visitor.VisitChildren(this);
+		}
+	}
+
+	[RuleVersion(0)]
+	public ElseIfBlockContext elseIfBlock() {
+		ElseIfBlockContext _localctx = new ElseIfBlockContext(Context, State);
+		EnterRule(_localctx, 12, RULE_elseIfBlock);
+		try {
+			EnterOuterAlt(_localctx, 1);
+			{
+			State = 70;
+			Match(OPEN);
+			State = 71;
+			Match(ELSE);
+			State = 72;
+			Match(IF);
+			State = 73;
+			path();
+			State = 74;
+			Match(CLOSE);
+			State = 75;
+			content();
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			ErrorHandler.ReportError(this, re);
+			ErrorHandler.Recover(this, re);
+		}
+		finally {
+			ExitRule();
+		}
+		return _localctx;
+	}
+
+	public partial class ElseBlockContext : ParserRuleContext {
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode OPEN() { return GetToken(GoTextTemplateParser.OPEN, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ELSE() { return GetToken(GoTextTemplateParser.ELSE, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CLOSE() { return GetToken(GoTextTemplateParser.CLOSE, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ContentContext content() {
+			return GetRuleContext<ContentContext>(0);
+		}
+		public ElseBlockContext(ParserRuleContext parent, int invokingState)
+			: base(parent, invokingState)
+		{
+		}
+		public override int RuleIndex { get { return RULE_elseBlock; } }
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void EnterRule(IParseTreeListener listener) {
+			IGoTextTemplateParserListener typedListener = listener as IGoTextTemplateParserListener;
+			if (typedListener != null) typedListener.EnterElseBlock(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void ExitRule(IParseTreeListener listener) {
+			IGoTextTemplateParserListener typedListener = listener as IGoTextTemplateParserListener;
+			if (typedListener != null) typedListener.ExitElseBlock(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override TResult Accept<TResult>(IParseTreeVisitor<TResult> visitor) {
+			IGoTextTemplateParserVisitor<TResult> typedVisitor = visitor as IGoTextTemplateParserVisitor<TResult>;
+			if (typedVisitor != null) return typedVisitor.VisitElseBlock(this);
+			else return visitor.VisitChildren(this);
+		}
+	}
+
+	[RuleVersion(0)]
+	public ElseBlockContext elseBlock() {
+		ElseBlockContext _localctx = new ElseBlockContext(Context, State);
+		EnterRule(_localctx, 14, RULE_elseBlock);
+		try {
+			EnterOuterAlt(_localctx, 1);
+			{
+			State = 77;
+			Match(OPEN);
+			State = 78;
+			Match(ELSE);
+			State = 79;
+			Match(CLOSE);
+			State = 80;
+			content();
 			}
 		}
 		catch (RecognitionException re) {
@@ -456,11 +713,11 @@ public partial class GoTextTemplateParser : Parser {
 			return GetToken(GoTextTemplateParser.OPEN, i);
 		}
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode FOR() { return GetToken(GoTextTemplateParser.FOR, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] IDENT() { return GetTokens(GoTextTemplateParser.IDENT); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT(int i) {
-			return GetToken(GoTextTemplateParser.IDENT, i);
-		}
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENT() { return GetToken(GoTextTemplateParser.IDENT, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IN() { return GetToken(GoTextTemplateParser.IN, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public PathContext path() {
+			return GetRuleContext<PathContext>(0);
+		}
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode[] CLOSE() { return GetTokens(GoTextTemplateParser.CLOSE); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode CLOSE(int i) {
 			return GetToken(GoTextTemplateParser.CLOSE, i);
@@ -469,7 +726,9 @@ public partial class GoTextTemplateParser : Parser {
 			return GetRuleContext<ContentContext>(0);
 		}
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode END() { return GetToken(GoTextTemplateParser.END, 0); }
-		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DOTIDENT() { return GetToken(GoTextTemplateParser.DOTIDENT, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ElseBlockContext elseBlock() {
+			return GetRuleContext<ElseBlockContext>(0);
+		}
 		public ForBlockContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
 		{
@@ -496,37 +755,39 @@ public partial class GoTextTemplateParser : Parser {
 	[RuleVersion(0)]
 	public ForBlockContext forBlock() {
 		ForBlockContext _localctx = new ForBlockContext(Context, State);
-		EnterRule(_localctx, 10, RULE_forBlock);
-		int _la;
+		EnterRule(_localctx, 16, RULE_forBlock);
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 46;
+			State = 82;
 			Match(OPEN);
-			State = 47;
+			State = 83;
 			Match(FOR);
-			State = 48;
+			State = 84;
 			Match(IDENT);
-			State = 49;
+			State = 85;
 			Match(IN);
-			State = 50;
-			_la = TokenStream.LA(1);
-			if ( !(_la==IDENT || _la==DOTIDENT) ) {
-			ErrorHandler.RecoverInline(this);
-			}
-			else {
-				ErrorHandler.ReportMatch(this);
-			    Consume();
-			}
-			State = 51;
+			State = 86;
+			path();
+			State = 87;
 			Match(CLOSE);
-			State = 52;
+			State = 88;
 			content();
-			State = 53;
+			State = 90;
+			ErrorHandler.Sync(this);
+			switch ( Interpreter.AdaptivePredict(TokenStream,7,Context) ) {
+			case 1:
+				{
+				State = 89;
+				elseBlock();
+				}
+				break;
+			}
+			State = 92;
 			Match(OPEN);
-			State = 54;
+			State = 93;
 			Match(END);
-			State = 55;
+			State = 94;
 			Match(CLOSE);
 			}
 		}
@@ -543,51 +804,81 @@ public partial class GoTextTemplateParser : Parser {
 
 	private static char[] _serializedATN = {
 		'\x3', '\x608B', '\xA72A', '\x8133', '\xB9ED', '\x417C', '\x3BE7', '\x7786', 
-		'\x5964', '\x3', '\r', '<', '\x4', '\x2', '\t', '\x2', '\x4', '\x3', '\t', 
-		'\x3', '\x4', '\x4', '\t', '\x4', '\x4', '\x5', '\t', '\x5', '\x4', '\x6', 
-		'\t', '\x6', '\x4', '\a', '\t', '\a', '\x3', '\x2', '\x3', '\x2', '\x3', 
-		'\x2', '\x3', '\x3', '\a', '\x3', '\x13', '\n', '\x3', '\f', '\x3', '\xE', 
-		'\x3', '\x16', '\v', '\x3', '\x3', '\x4', '\x3', '\x4', '\x3', '\x4', 
-		'\x3', '\x4', '\x5', '\x4', '\x1C', '\n', '\x4', '\x3', '\x5', '\x3', 
-		'\x5', '\x3', '\x5', '\x3', '\x5', '\x3', '\x6', '\x3', '\x6', '\x3', 
-		'\x6', '\x3', '\x6', '\x3', '\x6', '\x3', '\x6', '\x3', '\x6', '\x3', 
-		'\x6', '\x3', '\x6', '\x5', '\x6', '+', '\n', '\x6', '\x3', '\x6', '\x3', 
-		'\x6', '\x3', '\x6', '\x3', '\x6', '\x3', '\a', '\x3', '\a', '\x3', '\a', 
-		'\x3', '\a', '\x3', '\a', '\x3', '\a', '\x3', '\a', '\x3', '\a', '\x3', 
-		'\a', '\x3', '\a', '\x3', '\a', '\x3', '\a', '\x2', '\x2', '\b', '\x2', 
-		'\x4', '\x6', '\b', '\n', '\f', '\x2', '\x3', '\x3', '\x2', '\v', '\f', 
-		'\x2', ':', '\x2', '\xE', '\x3', '\x2', '\x2', '\x2', '\x4', '\x14', '\x3', 
-		'\x2', '\x2', '\x2', '\x6', '\x1B', '\x3', '\x2', '\x2', '\x2', '\b', 
-		'\x1D', '\x3', '\x2', '\x2', '\x2', '\n', '!', '\x3', '\x2', '\x2', '\x2', 
-		'\f', '\x30', '\x3', '\x2', '\x2', '\x2', '\xE', '\xF', '\x5', '\x4', 
-		'\x3', '\x2', '\xF', '\x10', '\a', '\x2', '\x2', '\x3', '\x10', '\x3', 
-		'\x3', '\x2', '\x2', '\x2', '\x11', '\x13', '\x5', '\x6', '\x4', '\x2', 
-		'\x12', '\x11', '\x3', '\x2', '\x2', '\x2', '\x13', '\x16', '\x3', '\x2', 
-		'\x2', '\x2', '\x14', '\x12', '\x3', '\x2', '\x2', '\x2', '\x14', '\x15', 
-		'\x3', '\x2', '\x2', '\x2', '\x15', '\x5', '\x3', '\x2', '\x2', '\x2', 
-		'\x16', '\x14', '\x3', '\x2', '\x2', '\x2', '\x17', '\x1C', '\a', '\x4', 
-		'\x2', '\x2', '\x18', '\x1C', '\x5', '\b', '\x5', '\x2', '\x19', '\x1C', 
-		'\x5', '\n', '\x6', '\x2', '\x1A', '\x1C', '\x5', '\f', '\a', '\x2', '\x1B', 
-		'\x17', '\x3', '\x2', '\x2', '\x2', '\x1B', '\x18', '\x3', '\x2', '\x2', 
-		'\x2', '\x1B', '\x19', '\x3', '\x2', '\x2', '\x2', '\x1B', '\x1A', '\x3', 
-		'\x2', '\x2', '\x2', '\x1C', '\a', '\x3', '\x2', '\x2', '\x2', '\x1D', 
-		'\x1E', '\a', '\x3', '\x2', '\x2', '\x1E', '\x1F', '\t', '\x2', '\x2', 
-		'\x2', '\x1F', ' ', '\a', '\x5', '\x2', '\x2', ' ', '\t', '\x3', '\x2', 
-		'\x2', '\x2', '!', '\"', '\a', '\x3', '\x2', '\x2', '\"', '#', '\a', '\x6', 
-		'\x2', '\x2', '#', '$', '\t', '\x2', '\x2', '\x2', '$', '%', '\a', '\x5', 
-		'\x2', '\x2', '%', '*', '\x5', '\x4', '\x3', '\x2', '&', '\'', '\a', '\x3', 
-		'\x2', '\x2', '\'', '(', '\a', '\a', '\x2', '\x2', '(', ')', '\a', '\x5', 
-		'\x2', '\x2', ')', '+', '\x5', '\x4', '\x3', '\x2', '*', '&', '\x3', '\x2', 
-		'\x2', '\x2', '*', '+', '\x3', '\x2', '\x2', '\x2', '+', ',', '\x3', '\x2', 
-		'\x2', '\x2', ',', '-', '\a', '\x3', '\x2', '\x2', '-', '.', '\a', '\b', 
-		'\x2', '\x2', '.', '/', '\a', '\x5', '\x2', '\x2', '/', '\v', '\x3', '\x2', 
-		'\x2', '\x2', '\x30', '\x31', '\a', '\x3', '\x2', '\x2', '\x31', '\x32', 
-		'\a', '\t', '\x2', '\x2', '\x32', '\x33', '\a', '\v', '\x2', '\x2', '\x33', 
-		'\x34', '\a', '\n', '\x2', '\x2', '\x34', '\x35', '\t', '\x2', '\x2', 
-		'\x2', '\x35', '\x36', '\a', '\x5', '\x2', '\x2', '\x36', '\x37', '\x5', 
-		'\x4', '\x3', '\x2', '\x37', '\x38', '\a', '\x3', '\x2', '\x2', '\x38', 
-		'\x39', '\a', '\b', '\x2', '\x2', '\x39', ':', '\a', '\x5', '\x2', '\x2', 
-		':', '\r', '\x3', '\x2', '\x2', '\x2', '\x5', '\x14', '\x1B', '*',
+		'\x5964', '\x3', '\x12', '\x63', '\x4', '\x2', '\t', '\x2', '\x4', '\x3', 
+		'\t', '\x3', '\x4', '\x4', '\t', '\x4', '\x4', '\x5', '\t', '\x5', '\x4', 
+		'\x6', '\t', '\x6', '\x4', '\a', '\t', '\a', '\x4', '\b', '\t', '\b', 
+		'\x4', '\t', '\t', '\t', '\x4', '\n', '\t', '\n', '\x3', '\x2', '\x3', 
+		'\x2', '\x3', '\x2', '\x3', '\x3', '\a', '\x3', '\x19', '\n', '\x3', '\f', 
+		'\x3', '\xE', '\x3', '\x1C', '\v', '\x3', '\x3', '\x4', '\x3', '\x4', 
+		'\x3', '\x4', '\x3', '\x4', '\x5', '\x4', '\"', '\n', '\x4', '\x3', '\x5', 
+		'\x3', '\x5', '\x3', '\x5', '\x3', '\x5', '\x3', '\x6', '\x5', '\x6', 
+		')', '\n', '\x6', '\x3', '\x6', '\x3', '\x6', '\x3', '\x6', '\x3', '\x6', 
+		'\x3', '\x6', '\x3', '\x6', '\x3', '\x6', '\a', '\x6', '\x32', '\n', '\x6', 
+		'\f', '\x6', '\xE', '\x6', '\x35', '\v', '\x6', '\x3', '\a', '\x3', '\a', 
+		'\x3', '\a', '\x3', '\a', '\x3', '\a', '\x3', '\a', '\a', '\a', '=', '\n', 
+		'\a', '\f', '\a', '\xE', '\a', '@', '\v', '\a', '\x3', '\a', '\x5', '\a', 
+		'\x43', '\n', '\a', '\x3', '\a', '\x3', '\a', '\x3', '\a', '\x3', '\a', 
+		'\x3', '\b', '\x3', '\b', '\x3', '\b', '\x3', '\b', '\x3', '\b', '\x3', 
+		'\b', '\x3', '\b', '\x3', '\t', '\x3', '\t', '\x3', '\t', '\x3', '\t', 
+		'\x3', '\t', '\x3', '\n', '\x3', '\n', '\x3', '\n', '\x3', '\n', '\x3', 
+		'\n', '\x3', '\n', '\x3', '\n', '\x3', '\n', '\x5', '\n', ']', '\n', '\n', 
+		'\x3', '\n', '\x3', '\n', '\x3', '\n', '\x3', '\n', '\x3', '\n', '\x2', 
+		'\x2', '\v', '\x2', '\x4', '\x6', '\b', '\n', '\f', '\xE', '\x10', '\x12', 
+		'\x2', '\x3', '\x3', '\x2', '\xE', '\x10', '\x2', '\x63', '\x2', '\x14', 
+		'\x3', '\x2', '\x2', '\x2', '\x4', '\x1A', '\x3', '\x2', '\x2', '\x2', 
+		'\x6', '!', '\x3', '\x2', '\x2', '\x2', '\b', '#', '\x3', '\x2', '\x2', 
+		'\x2', '\n', '(', '\x3', '\x2', '\x2', '\x2', '\f', '\x36', '\x3', '\x2', 
+		'\x2', '\x2', '\xE', 'H', '\x3', '\x2', '\x2', '\x2', '\x10', 'O', '\x3', 
+		'\x2', '\x2', '\x2', '\x12', 'T', '\x3', '\x2', '\x2', '\x2', '\x14', 
+		'\x15', '\x5', '\x4', '\x3', '\x2', '\x15', '\x16', '\a', '\x2', '\x2', 
+		'\x3', '\x16', '\x3', '\x3', '\x2', '\x2', '\x2', '\x17', '\x19', '\x5', 
+		'\x6', '\x4', '\x2', '\x18', '\x17', '\x3', '\x2', '\x2', '\x2', '\x19', 
+		'\x1C', '\x3', '\x2', '\x2', '\x2', '\x1A', '\x18', '\x3', '\x2', '\x2', 
+		'\x2', '\x1A', '\x1B', '\x3', '\x2', '\x2', '\x2', '\x1B', '\x5', '\x3', 
+		'\x2', '\x2', '\x2', '\x1C', '\x1A', '\x3', '\x2', '\x2', '\x2', '\x1D', 
+		'\"', '\a', '\x4', '\x2', '\x2', '\x1E', '\"', '\x5', '\b', '\x5', '\x2', 
+		'\x1F', '\"', '\x5', '\f', '\a', '\x2', ' ', '\"', '\x5', '\x12', '\n', 
+		'\x2', '!', '\x1D', '\x3', '\x2', '\x2', '\x2', '!', '\x1E', '\x3', '\x2', 
+		'\x2', '\x2', '!', '\x1F', '\x3', '\x2', '\x2', '\x2', '!', ' ', '\x3', 
+		'\x2', '\x2', '\x2', '\"', '\a', '\x3', '\x2', '\x2', '\x2', '#', '$', 
+		'\a', '\x3', '\x2', '\x2', '$', '%', '\x5', '\n', '\x6', '\x2', '%', '&', 
+		'\a', '\x5', '\x2', '\x2', '&', '\t', '\x3', '\x2', '\x2', '\x2', '\'', 
+		')', '\a', '\v', '\x2', '\x2', '(', '\'', '\x3', '\x2', '\x2', '\x2', 
+		'(', ')', '\x3', '\x2', '\x2', '\x2', ')', '*', '\x3', '\x2', '\x2', '\x2', 
+		'*', '+', '\a', '\x10', '\x2', '\x2', '+', '\x33', '\x3', '\x2', '\x2', 
+		'\x2', ',', '-', '\a', '\v', '\x2', '\x2', '-', '\x32', '\a', '\x10', 
+		'\x2', '\x2', '.', '/', '\a', '\f', '\x2', '\x2', '/', '\x30', '\t', '\x2', 
+		'\x2', '\x2', '\x30', '\x32', '\a', '\r', '\x2', '\x2', '\x31', ',', '\x3', 
+		'\x2', '\x2', '\x2', '\x31', '.', '\x3', '\x2', '\x2', '\x2', '\x32', 
+		'\x35', '\x3', '\x2', '\x2', '\x2', '\x33', '\x31', '\x3', '\x2', '\x2', 
+		'\x2', '\x33', '\x34', '\x3', '\x2', '\x2', '\x2', '\x34', '\v', '\x3', 
+		'\x2', '\x2', '\x2', '\x35', '\x33', '\x3', '\x2', '\x2', '\x2', '\x36', 
+		'\x37', '\a', '\x3', '\x2', '\x2', '\x37', '\x38', '\a', '\x6', '\x2', 
+		'\x2', '\x38', '\x39', '\x5', '\n', '\x6', '\x2', '\x39', ':', '\a', '\x5', 
+		'\x2', '\x2', ':', '>', '\x5', '\x4', '\x3', '\x2', ';', '=', '\x5', '\xE', 
+		'\b', '\x2', '<', ';', '\x3', '\x2', '\x2', '\x2', '=', '@', '\x3', '\x2', 
+		'\x2', '\x2', '>', '<', '\x3', '\x2', '\x2', '\x2', '>', '?', '\x3', '\x2', 
+		'\x2', '\x2', '?', '\x42', '\x3', '\x2', '\x2', '\x2', '@', '>', '\x3', 
+		'\x2', '\x2', '\x2', '\x41', '\x43', '\x5', '\x10', '\t', '\x2', '\x42', 
+		'\x41', '\x3', '\x2', '\x2', '\x2', '\x42', '\x43', '\x3', '\x2', '\x2', 
+		'\x2', '\x43', '\x44', '\x3', '\x2', '\x2', '\x2', '\x44', '\x45', '\a', 
+		'\x3', '\x2', '\x2', '\x45', '\x46', '\a', '\b', '\x2', '\x2', '\x46', 
+		'G', '\a', '\x5', '\x2', '\x2', 'G', '\r', '\x3', '\x2', '\x2', '\x2', 
+		'H', 'I', '\a', '\x3', '\x2', '\x2', 'I', 'J', '\a', '\a', '\x2', '\x2', 
+		'J', 'K', '\a', '\x6', '\x2', '\x2', 'K', 'L', '\x5', '\n', '\x6', '\x2', 
+		'L', 'M', '\a', '\x5', '\x2', '\x2', 'M', 'N', '\x5', '\x4', '\x3', '\x2', 
+		'N', '\xF', '\x3', '\x2', '\x2', '\x2', 'O', 'P', '\a', '\x3', '\x2', 
+		'\x2', 'P', 'Q', '\a', '\a', '\x2', '\x2', 'Q', 'R', '\a', '\x5', '\x2', 
+		'\x2', 'R', 'S', '\x5', '\x4', '\x3', '\x2', 'S', '\x11', '\x3', '\x2', 
+		'\x2', '\x2', 'T', 'U', '\a', '\x3', '\x2', '\x2', 'U', 'V', '\a', '\t', 
+		'\x2', '\x2', 'V', 'W', '\a', '\x10', '\x2', '\x2', 'W', 'X', '\a', '\n', 
+		'\x2', '\x2', 'X', 'Y', '\x5', '\n', '\x6', '\x2', 'Y', 'Z', '\a', '\x5', 
+		'\x2', '\x2', 'Z', '\\', '\x5', '\x4', '\x3', '\x2', '[', ']', '\x5', 
+		'\x10', '\t', '\x2', '\\', '[', '\x3', '\x2', '\x2', '\x2', '\\', ']', 
+		'\x3', '\x2', '\x2', '\x2', ']', '^', '\x3', '\x2', '\x2', '\x2', '^', 
+		'_', '\a', '\x3', '\x2', '\x2', '_', '`', '\a', '\b', '\x2', '\x2', '`', 
+		'\x61', '\a', '\x5', '\x2', '\x2', '\x61', '\x13', '\x3', '\x2', '\x2', 
+		'\x2', '\n', '\x1A', '!', '(', '\x31', '\x33', '>', '\x42', '\\',
 	};
 
 	public static readonly ATN _ATN =

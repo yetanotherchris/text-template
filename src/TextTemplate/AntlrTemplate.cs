@@ -79,33 +79,40 @@ public static class AntlrTemplate
 
         public override string VisitPlaceholder(GoTextTemplateParser.PlaceholderContext context)
         {
-            var text = context.IDENT()?.GetText() ?? context.DOTIDENT()?.GetText();
-            var key = text!.TrimStart('.');
-            if (_data.TryGetValue(key, out var value))
-                return value?.ToString() ?? string.Empty;
-            return "{{UNDEFINED:" + key + "}}";
+            var value = ResolvePath(context.path());
+            return value?.ToString() ?? string.Empty;
         }
 
         public override string VisitIfBlock(GoTextTemplateParser.IfBlockContext context)
         {
-            var text = context.IDENT()?.GetText() ?? context.DOTIDENT()?.GetText();
-            var key = text!.TrimStart('.');
-            bool cond = _data.TryGetValue(key, out var val) && IsTrue(val);
-            if (cond)
-                return Visit(context.content(0));
-            if (context.ELSE() != null)
-                return Visit(context.content(1));
+            object? condVal = ResolvePath(context.path());
+            if (IsTrue(condVal))
+                return Visit(context.content());
+
+            foreach (var elif in context.elseIfBlock())
+            {
+                condVal = ResolvePath(elif.path());
+                if (IsTrue(condVal))
+                    return Visit(elif.content());
+            }
+
+            if (context.elseBlock() != null)
+                return Visit(context.elseBlock().content());
+
             return string.Empty;
         }
 
         public override string VisitForBlock(GoTextTemplateParser.ForBlockContext context)
         {
-            var listToken = context.IDENT(1)?.GetText() ?? context.DOTIDENT()?.GetText();
-            var listKey = listToken!.TrimStart('.');
-            if (!_data.TryGetValue(listKey, out var value) || value is not System.Collections.IEnumerable enumerable)
+            var listObj = ResolvePath(context.path());
+            if (listObj is not IEnumerable enumerable)
+            {
+                if (context.elseBlock() != null)
+                    return Visit(context.elseBlock().content());
                 return string.Empty;
+            }
 
-            var itemName = context.IDENT(0).GetText();
+            var itemName = context.IDENT().GetText();
             var sb = new StringBuilder();
             foreach (var item in enumerable)
             {
@@ -116,7 +123,107 @@ public static class AntlrTemplate
                 var v = new ReplacementVisitor(child);
                 sb.Append(v.Visit(context.content()));
             }
+
+            if (sb.Length == 0 && context.elseBlock() != null)
+                return Visit(context.elseBlock().content());
+
             return sb.ToString();
+        }
+
+        private object? ResolvePath(GoTextTemplateParser.PathContext context)
+        {
+            string text = context.GetText();
+            var segments = ParseSegments(text);
+            object? current = _data;
+            foreach (var seg in segments)
+            {
+                if (current == null)
+                    return null;
+                current = ResolveSegment(current, seg);
+            }
+            return current;
+        }
+
+        private static List<object> ParseSegments(string text)
+        {
+            var result = new List<object>();
+            int i = 0;
+            if (text.StartsWith(".")) i++;
+            while (i < text.Length)
+            {
+                if (text[i] == '.')
+                    i++;
+                if (i >= text.Length) break;
+
+                if (text[i] == '[')
+                {
+                    i++;
+                    if (i < text.Length && text[i] == '"')
+                    {
+                        i++;
+                        int start = i;
+                        while (i < text.Length && text[i] != '"') i++;
+                        var key = text.Substring(start, i - start);
+                        result.Add(key);
+                        if (i < text.Length && text[i] == '"') i++;
+                    }
+                    else
+                    {
+                        int start = i;
+                        while (i < text.Length && text[i] != ']') i++;
+                        var key = text.Substring(start, i - start);
+                        if (int.TryParse(key, out int idx))
+                            result.Add(idx);
+                        else
+                            result.Add(key);
+                    }
+                    if (i < text.Length && text[i] == ']') i++;
+                }
+                else
+                {
+                    int start = i;
+                    while (i < text.Length && (char.IsLetterOrDigit(text[i]) || text[i] == '_')) i++;
+                    var id = text.Substring(start, i - start);
+                    result.Add(id);
+                }
+            }
+            return result;
+        }
+
+        private static object? ResolveSegment(object? current, object segment)
+        {
+            if (current == null) return null;
+
+            if (segment is int idx)
+            {
+                if (current is IList list)
+                {
+                    return idx >= 0 && idx < list.Count ? list[idx] : null;
+                }
+                return null;
+            }
+
+            string key = segment.ToString()!;
+            if (current is IDictionary<string, object> dict)
+            {
+                return dict.TryGetValue(key, out var val) ? val : null;
+            }
+
+            if (current is IDictionary mapObj)
+            {
+                return mapObj.Contains(key) ? mapObj[key] : null;
+            }
+
+            var type = current.GetType();
+            var prop = type.GetProperty(key);
+            if (prop != null)
+                return prop.GetValue(current);
+
+            var field = type.GetField(key);
+            if (field != null)
+                return field.GetValue(current);
+
+            return null;
         }
     }
 }
