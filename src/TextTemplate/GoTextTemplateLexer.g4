@@ -17,6 +17,8 @@ LBRACK  : '[';
 RBRACK  : ']';
 NUMBER  : [0-9]+;
 STRING  : '"' (~["\\] | '\\' .)* '"';
+BOOLEAN : 'true' | 'false';
+EQ      : 'eq';
 IDENT   : [a-zA-Z_][a-zA-Z0-9_]*;
 COMMENT : '/*' .*? '*/' -> skip;
 WS      : [ \t\r\n]+ -> skip;

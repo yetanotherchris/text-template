@@ -111,6 +111,28 @@ Josie";
     }
 
     [Fact]
+    public void AntlrTemplate_EqualityCondition()
+    {
+        const string tmpl = "{{ if eq .Status \"active\" }}OK{{ else }}NO{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Status"] = "active"
+        });
+        Assert.Equal("OK", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_ExistenceCheck()
+    {
+        const string tmpl = "{{ if .User }}Yes{{ else }}No{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["User"] = new Recipient()
+        });
+        Assert.Equal("Yes", result);
+    }
+
+    [Fact]
     public void AntlrTemplate_ForLoopElse()
     {
         const string tmpl = "{{ for x in Items }}X{{ else }}Empty{{ end }}";

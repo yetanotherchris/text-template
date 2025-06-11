@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections;
 using System.Text;
+using System.Text.RegularExpressions;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
@@ -95,7 +96,8 @@ public static class TemplateEngine
             bool b => b,
             string s when bool.TryParse(s, out var b) => b,
             int i => i != 0,
-            _ => false
+            null => false,
+            _ => true
         };
     }
 
@@ -145,13 +147,13 @@ public static class TemplateEngine
 
         public override string VisitIfBlock(GoTextTemplateParser.IfBlockContext context)
         {
-            object? condVal = ResolvePath(context.path());
+            object? condVal = EvaluateExpr(context.expr());
             if (IsTrue(condVal))
                 return Visit(context.content());
 
             foreach (var elif in context.elseIfBlock())
             {
-                condVal = ResolvePath(elif.path());
+                condVal = EvaluateExpr(elif.expr());
                 if (IsTrue(condVal))
                     return Visit(elif.content());
             }
@@ -202,6 +204,49 @@ public static class TemplateEngine
                 current = ResolveSegment(current, seg);
             }
             return current;
+        }
+
+        private object? EvaluateExpr(GoTextTemplateParser.ExprContext context)
+        {
+            if (context.path() != null)
+                return ResolvePath(context.path());
+
+            if (context.EQ() != null)
+            {
+                var left = EvaluateValue(context.value(0));
+                var right = EvaluateValue(context.value(1));
+                return Equals(left, right);
+            }
+
+            return null;
+        }
+
+        private object? EvaluateValue(GoTextTemplateParser.ValueContext context)
+        {
+            if (context.path() != null)
+                return ResolvePath(context.path());
+
+            if (context.NUMBER() != null)
+            {
+                if (int.TryParse(context.NUMBER().GetText(), out int i))
+                    return i;
+                return context.NUMBER().GetText();
+            }
+
+            if (context.STRING() != null)
+            {
+                string s = context.STRING().GetText();
+                s = s.Substring(1, s.Length - 2);
+                s = Regex.Unescape(s);
+                return s;
+            }
+
+            if (context.BOOLEAN() != null)
+            {
+                return bool.Parse(context.BOOLEAN().GetText());
+            }
+
+            return null;
         }
 
         private static List<object> ParseSegments(string text)
