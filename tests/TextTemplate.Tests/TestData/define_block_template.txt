@@ -1,0 +1,7 @@
+{{define "title"}}	Custom Title{{end-}}
+{{- block "title" .Ctx -}}
+	{{.DefaultTitle}}
+{{end}}
+{{block "content" .Ctx -}}
+	Default Content
+{{end}}
