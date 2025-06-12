@@ -112,6 +112,19 @@ public static class TemplateEngine
         };
     }
 
+    private static readonly Dictionary<string, Delegate> RegisteredFunctions = new();
+
+    /// <summary>
+    /// Registers a function that can be invoked from templates using the
+    /// <c>call</c> pipeline helper.
+    /// </summary>
+    /// <param name="name">The function name.</param>
+    /// <param name="function">The delegate to invoke.</param>
+    public static void RegisterFunction(string name, Delegate function)
+    {
+        RegisteredFunctions[name] = function;
+    }
+
     private class ReplacementVisitor : GoTextTemplateParserBaseVisitor<string>
     {
         private readonly IDictionary<string, object> _data;
@@ -128,7 +141,84 @@ public static class TemplateEngine
             },
             ["html"] = args => System.Net.WebUtility.HtmlEncode(string.Concat(args.Select(a => a?.ToString()))),
             ["js"] = args => System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(string.Concat(args.Select(a => a?.ToString()))),
-            ["urlquery"] = args => Uri.EscapeDataString(string.Concat(args.Select(a => a?.ToString())))
+            ["urlquery"] = args => Uri.EscapeDataString(string.Concat(args.Select(a => a?.ToString()))),
+            ["len"] = args =>
+            {
+                if (args.Length == 0 || args[0] == null) return 0;
+                var v = args[0]!;
+                if (v is string s) return s.Length;
+                if (v is ICollection col) return col.Count;
+                if (v is IEnumerable enumerable)
+                {
+                    var list = enumerable.Cast<object?>().ToList();
+                    return list.Count;
+                }
+                return 0;
+            },
+            ["index"] = args =>
+            {
+                if (args.Length < 2) return null;
+                object? current = args[0];
+                for (int i = 1; i < args.Length && current != null; i++)
+                {
+                    var key = args[i];
+                    if (current is IList list && key is int idx)
+                    {
+                        current = idx >= 0 && idx < list.Count ? list[idx] : null;
+                        continue;
+                    }
+                    if (current is IDictionary dict)
+                    {
+                        current = dict[key];
+                        continue;
+                    }
+                    current = null;
+                }
+                return current;
+            },
+            ["slice"] = args =>
+            {
+                if (args.Length == 0 || args[0] == null) return null;
+                int start = args.Length > 1 ? Convert.ToInt32(args[1]) : 0;
+                int end = args.Length > 2 ? Convert.ToInt32(args[2]) : -1;
+                var src = args[0];
+                if (src is string str)
+                {
+                    if (end < 0 || end > str.Length) end = str.Length;
+                    if (start < 0) start = 0;
+                    if (start >= end) return string.Empty;
+                    return str.Substring(start, end - start);
+                }
+                if (src is IList list)
+                {
+                    if (end < 0 || end > list.Count) end = list.Count;
+                    if (start < 0) start = 0;
+                    var result = new List<object?>();
+                    for (int i = start; i < end; i++)
+                        result.Add(list[i]);
+                    return result.ToArray();
+                }
+                return null;
+            },
+            ["call"] = args =>
+            {
+                if (args.Length == 0) return null;
+                var fnSpec = args[0];
+                var callArgs = args.Skip(1).ToArray();
+
+                if (fnSpec is string name && RegisteredFunctions.TryGetValue(name, out var reg))
+                    return reg.DynamicInvoke(callArgs);
+
+                switch (fnSpec)
+                {
+                    case Func<object?[], object?> f:
+                        return f(callArgs);
+                    case Delegate d:
+                        return d.DynamicInvoke(callArgs);
+                    default:
+                        return null;
+                }
+            }
         };
 
         public ReplacementVisitor(IDictionary<string, object> data)

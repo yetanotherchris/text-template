@@ -111,6 +111,23 @@ substitution, loops and conditionals.
 - `html` - HTML escape the value
 - `js` - JavaScript escape the value
 - `urlquery` - escape for URL query parameters
+- `len` - length of a collection or string
+- `index` - retrieve an element by index or key
+- `slice` - slice strings or lists
+- `call` - invoke a function value
+
+Registered functions can be invoked via `call` by name. Template example:
+
+```
+{{ call "Add" 1 2 }}
+```
+
+```csharp
+const string template = "{{ call \"Add\" 1 2 }}";
+TemplateEngine.RegisterFunction("Add", new Func<int, int, int>((a, b) => a + b));
+var result = TemplateEngine.Process(template, new {});
+// result == "3"
+```
 
 ## Not Implemented Yet
 
