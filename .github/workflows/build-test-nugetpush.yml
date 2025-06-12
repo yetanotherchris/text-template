@@ -1,0 +1,47 @@
+name: build-test-nugetpush
+
+on:
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.gitignore'
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      VERSION_NUMBER: "1.0"
+      PR_NUMBER: ${{ github.event.number }}
+      NUGET_KEY: ${{ secrets.NUGET_KEY }}
+
+    steps:
+      - name: Git - check out repository code
+        uses: actions/checkout@v4
+
+      - name: .NET - setup
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: .NET - restore & build
+        run: dotnet build
+
+      - name: .NET - test
+        run: dotnet test
+
+      - name: Nuget - push PR package
+        if: github.event_name == 'pull_request' && github.actor == github.repository_owner
+        run: |
+          export PACKAGE_VERSION="$VERSION_NUMBER.$GITHUB_RUN_NUMBER-pr-$PR_NUMBER"
+          dotnet pack src/TextTemplate/TextTemplate.csproj -c Release /p:PackageVersion=$PACKAGE_VERSION
+          dotnet nuget push "src/TextTemplate/bin/Release/TextTemplate.$PACKAGE_VERSION.nupkg" --api-key "$NUGET_KEY" --source https://api.nuget.org/v3/index.json
+
+      - name: Nuget - push main package
+        if: github.event_name != 'pull_request' && github.actor == github.repository_owner
+        run: |
+          export PACKAGE_VERSION="$VERSION_NUMBER.$GITHUB_RUN_NUMBER"
+          dotnet pack src/TextTemplate/TextTemplate.csproj -c Release /p:PackageVersion=$PACKAGE_VERSION
+          dotnet nuget push "src/TextTemplate/bin/Release/TextTemplate.$PACKAGE_VERSION.nupkg" --api-key "$NUGET_KEY" --source https://api.nuget.org/v3/index.json

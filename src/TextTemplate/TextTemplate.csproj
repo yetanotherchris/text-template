@@ -4,6 +4,13 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PackageId>TextTemplate</PackageId>
+    <Authors>Chris S.</Authors>
+    <Description>A C# version of Go's text/template engine.</Description>
+    <Version>1.0.0</Version>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/yetanotherchris/text-template</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/yetanotherchris/text-template</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
