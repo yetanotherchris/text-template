@@ -34,8 +34,8 @@ substitution, loops and conditionals.
 
 ### 1. Variable Interpolation
 
-- Access struct fields: `{{ .Field }}`
-- Nested field access: `{{ .User.Name }}`
+- Access properties: `{{ .Property }}`
+- Nested property access: `{{ .User.Name }}`
 - Index arrays or slices: `{{ .Items[0] }}`
 - Access map entries: `{{ .Data.key }}`
 - Control whitespace: `{{- .Name -}}`
@@ -46,7 +46,7 @@ substitution, loops and conditionals.
 - `if`/`else` blocks: `{{ if condition }}...{{ else }}...{{ end }}`
 - `else if` chains: `{{ if condition }}...{{ else if other }}...{{ end }}`
 - Supported conditions include:
-  - Boolean fields: `{{ if .IsActive }}`
+  - Boolean properties: `{{ if .IsActive }}`
   - Comparisons: `{{ if eq .Status "active" }}`
   - Existence checks: `{{ if .User }}`
 
