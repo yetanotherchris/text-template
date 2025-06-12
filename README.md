@@ -2,9 +2,7 @@
 
 [![NuGet](https://img.shields.io/nuget/v/go-text-template.svg)](https://www.nuget.org/packages/go-text-template/)
 
-This project is a C# adaptation of Go's template engine. It began as an
-experiment to see whether OpenAI Codex could port the Go implementation to
-.NET. Claude.AI helped with explanations and refinements along the way.
+This project is a C# implementation of Go's template engine using ANTLR for parsing. It began as an experiment to see whether OpenAI Codex could port the Go implementation to .NET. Claude.AI helped with explanations and refinements along the way.
 The source code in this repository was largely produced by Codex with input
 from Claude.AI, and this README itself was also authored using Codex.
 
@@ -13,10 +11,7 @@ The original Go package can be found here:
 - https://pkg.go.dev/text/template#pkg-overview
 - https://cs.opensource.google/go/go/+/refs/tags/go1.24.4:src/text/template/template.go
 
-Currently this repository demonstrates a relatively small but functional
-implementation. The `TemplateEngine.Process` helper reads templates using the
-ANTLR-generated `GoTemplateLexer` and `GoTemplateParser` and performs variable
-substitution, loops and conditionals.
+This library now contains virtually all functionality from the original Go text/template package. The `TemplateEngine.Process` helper reads templates using the ANTLR-generated `GoTemplateLexer` and `GoTemplateParser` and performs variable substitution, loops and conditionals.
 
 ## Features
 
@@ -26,7 +21,7 @@ substitution, loops and conditionals.
 - `for` loops and Go-style `range` loops over arrays, collections and maps.
 - Built-in functions: `eq`, `ne`, numeric comparisons (`lt`, `le`, `gt`, `ge`),
   logical operators (`and`, `or`, `not`) supporting multiple arguments.
-- Basic pipelines with the `lower` function for transforming output.
+- Basic pipelines with the `lower` function for transforming output, and `call` to invoke registered functions.
 - Access nested properties, map keys and indexes, including dynamic indexing via
   variables.
 - Whitespace trimming with `{{-` and `-}}` and comment syntax `{{/* ... */}}`.
@@ -156,8 +151,23 @@ var output = TemplateEngine.Process(letter, new
 Console.WriteLine(output);
 ```
 
-See the unit tests for more examples covering loops, conditionals and range
-expressions.
+### Template Definitions
+
+```csharp
+string tmpl = "{{define \"user\"}}Name: {{.Name}}, Age: {{.Age}}{{end}}{{template \"user\" .}}";
+var userResult = TemplateEngine.Process(tmpl, new { Name = "Jane", Age = 42 });
+// userResult == "Name: Jane, Age: 42"
+```
+
+### Calling Functions with `call`
+
+```csharp
+TemplateEngine.RegisterFunction("Add", new Func<int, int, int>((a, b) => a + b));
+string callTmpl = "{{ call \"Add\" 2 3 }}";
+string callResult = TemplateEngine.Process(callTmpl, new {});
+// callResult == "5"
+```
+See the unit tests for more examples covering loops, conditionals and range expressions. The `YmlTemplateFileTest` shows how to render a full Kubernetes manifest from `tests/TestData/template.yml` with the expected output in `tests/TestData/expected.yml`.
 
 ## Claude's suggestions
 https://gist.github.com/yetanotherchris/c80d0fadb5a2ee5b4beb0a4384020dbf.js
