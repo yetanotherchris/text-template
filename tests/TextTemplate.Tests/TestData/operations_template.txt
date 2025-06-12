@@ -1,0 +1,29 @@
+{{if and .User.IsActive .User.HasPermission -}}
+  Welcome, {{.User.Name}}!
+{{end -}}
+{{if .DefaultValue -}}
+  {{.DefaultValue}}
+{{else -}}
+  {{.UserValue}}
+{{end -}}
+{{if eq .Status "active" -}}
+  <span class="active">Online</span>
+{{else if or eq .Status "away" eq .Status "busy" -}}
+  <span class="away">Not Available</span>
+{{end -}}
+{{printf "Hello %s, you have %d messages" .Name .MessageCount}}
+{{.UserComment | html}}
+{{.SearchQuery | urlquery}}
+{{range index, item := .Items -}}
+  {{printf "%d: %s" index item}}
+{{end -}}
+{{if gt .ItemCount 0 -}}
+  {{index .Items 0}}
+{{end -}}
+{{if and gt .ItemCount 0 le .ItemCount 10 -}}
+  Small list: {{printf "%d items" .ItemCount}}
+{{else if gt .ItemCount 10 -}}
+  Large list: {{printf "%d items" .ItemCount}}
+{{else -}}
+  Empty list
+{{end -}}
