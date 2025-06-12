@@ -582,4 +582,27 @@ Josie";
         });
         result.ShouldBe("a%20b%26c");
     }
+
+    [Fact]
+    public void AntlrTemplate_PipelineChainedLowerHtml()
+    {
+        const string tmpl = "{{ .Name | lower | html }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Name"] = "<BOLD>"
+        });
+        result.ShouldBe("&lt;bold&gt;");
+    }
+
+    [Fact]
+    public void AntlrTemplate_PipelineChainedPrintLower()
+    {
+        const string tmpl = "{{ print .A .B | lower }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["A"] = "HELLO",
+            ["B"] = "WORLD"
+        });
+        result.ShouldBe("helloworld");
+    }
 }
