@@ -1,4 +1,5 @@
 using Xunit;
+using Shouldly;
 using TextTemplate;
 using System.Collections.Generic;
 using System.IO;
@@ -25,6 +26,6 @@ public class FullTemplateFromFileTests
             ["Items"] = new[] { "book", "pen" }
         });
 
-        Assert.Equal(expected, result);
+        result.ShouldBe(expected);
     }
 }
