@@ -642,12 +642,9 @@ Josie";
     [Fact]
     public void AntlrTemplate_PipelineCall()
     {
-        const string tmpl = "{{ call .Add 2 3 }}";
-        var data = new Dictionary<string, object>
-        {
-            ["Add"] = new Func<int, int, int>((a, b) => a + b)
-        };
-        var result = TemplateEngine.Process(tmpl, data);
+        const string tmpl = "{{ call \"Add\" 2 3 }}";
+        TemplateEngine.RegisterFunction("Add", new Func<int, int, int>((a, b) => a + b));
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
         result.ShouldBe("5");
     }
 }

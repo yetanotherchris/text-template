@@ -112,6 +112,19 @@ public static class TemplateEngine
         };
     }
 
+    private static readonly Dictionary<string, Delegate> RegisteredFunctions = new();
+
+    /// <summary>
+    /// Registers a function that can be invoked from templates using the
+    /// <c>call</c> pipeline helper.
+    /// </summary>
+    /// <param name="name">The function name.</param>
+    /// <param name="function">The delegate to invoke.</param>
+    public static void RegisterFunction(string name, Delegate function)
+    {
+        RegisteredFunctions[name] = function;
+    }
+
     private class ReplacementVisitor : GoTextTemplateParserBaseVisitor<string>
     {
         private readonly IDictionary<string, object> _data;
@@ -192,9 +205,13 @@ public static class TemplateEngine
             ["call"] = args =>
             {
                 if (args.Length == 0) return null;
-                var fn = args[0];
+                var fnSpec = args[0];
                 var callArgs = args.Skip(1).ToArray();
-                switch (fn)
+
+                if (fnSpec is string name && RegisteredFunctions.TryGetValue(name, out var reg))
+                    return reg.DynamicInvoke(callArgs);
+
+                switch (fnSpec)
                 {
                     case Func<object?[], object?> f:
                         return f(callArgs);

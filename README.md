@@ -116,6 +116,14 @@ substitution, loops and conditionals.
 - `slice` - slice strings or lists
 - `call` - invoke a function value
 
+Registered functions can be invoked via `call` by name:
+
+```csharp
+TemplateEngine.RegisterFunction("Add", new Func<int, int, int>((a, b) => a + b));
+var result = TemplateEngine.Process("{{ call \"Add\" 1 2 }}", new {});
+// result == "3"
+```
+
 ## Not Implemented Yet
 
 - `with`, `define`, `template` and `block` directives.
