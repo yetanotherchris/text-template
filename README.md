@@ -25,7 +25,7 @@ substitution, loops and conditionals.
 - Conditional blocks with `if`, `else if` and `else` clauses.
 - `for` loops and Go-style `range` loops over arrays, collections and maps.
 - Built-in functions: `eq`, `ne`, numeric comparisons (`lt`, `le`, `gt`, `ge`),
-  logical operators (`and`, `or`, `not`).
+  logical operators (`and`, `or`, `not`) supporting multiple arguments.
 - Basic pipelines with the `lower` function for transforming output.
 - Access nested properties, map keys and indexes, including dynamic indexing via
   variables.

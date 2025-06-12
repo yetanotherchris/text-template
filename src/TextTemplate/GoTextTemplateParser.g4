@@ -21,8 +21,8 @@ expr
     | LE value value
     | GT value value
     | GE value value
-    | AND expr expr
-    | OR expr expr
+    | AND expr expr+
+    | OR expr expr+
     | NOT expr
     ;
 

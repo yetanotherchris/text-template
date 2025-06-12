@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generated from GoTextTemplateLexer.g4 by ANTLR 4.9.2
+// Generated from src/TextTemplate/GoTextTemplateLexer.g4 by ANTLR 4.9.2
 
 // Unreachable code detected
 #pragma warning disable 0162
