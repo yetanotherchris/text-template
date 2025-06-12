@@ -111,6 +111,10 @@ substitution, loops and conditionals.
 - `html` - HTML escape the value
 - `js` - JavaScript escape the value
 - `urlquery` - escape for URL query parameters
+- `len` - length of a collection or string
+- `index` - retrieve an element by index or key
+- `slice` - slice strings or lists
+- `call` - invoke a function value
 
 ## Not Implemented Yet
 
