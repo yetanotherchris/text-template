@@ -19,6 +19,7 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
+namespace TextTemplate {
 using System;
 using System.IO;
 using System.Text;
@@ -310,3 +311,4 @@ public partial class GoTextTemplateLexer : Lexer {
 
 
 }
+} // namespace TextTemplate

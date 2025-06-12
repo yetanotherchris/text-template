@@ -72,10 +72,16 @@ substitution, loops and conditionals.
 ### 6. Pipelines
 
 - Chain functions with `|`, e.g. `{{ .Name | lower }}`
+- Available pipeline helpers include:
+  - `lower` - convert to lowercase
+  - `print` - concatenate values using default formatting
+  - `printf` - printf-style formatting using `SprintfFormatter`
+  - `html` - HTML escape the value
+  - `js` - JavaScript escape the value
+  - `urlquery` - escape for URL query parameters
 
 ## Not Implemented Yet
 
- - Additional pipeline functions and chaining of actions.
 - `with`, `define`, `template` and `block` directives.
 - Custom functions beyond basic comparisons and boolean operators.
 - Custom delimiter support.
