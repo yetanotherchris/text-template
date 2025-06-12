@@ -28,6 +28,10 @@ GE      : 'ge';
 AND     : 'and';
 OR      : 'or';
 NOT     : 'not';
+WITH    : 'with';
+DEFINE  : 'define';
+TEMPLATE: 'template';
+BLOCK   : 'block';
 PIPE    : '|';
 PATH
     : ('.'? IDENT (('.' IDENT) | ('[' ~']'* ']'))+)

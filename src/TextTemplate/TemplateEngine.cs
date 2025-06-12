@@ -30,7 +30,8 @@ public static class TemplateEngine
         var parser = new GoTextTemplateParser(tokens);
         IParseTree tree = parser.template();
 
-        var visitor = new ReplacementVisitor(data);
+        var templates = new Dictionary<string, GoTextTemplateParser.ContentContext>();
+        var visitor = new ReplacementVisitor(data, templates);
         return visitor.Visit(tree);
     }
 
@@ -221,9 +222,12 @@ public static class TemplateEngine
             }
         };
 
-        public ReplacementVisitor(IDictionary<string, object> data)
+        private readonly Dictionary<string, GoTextTemplateParser.ContentContext> _templates;
+
+        public ReplacementVisitor(IDictionary<string, object> data, Dictionary<string, GoTextTemplateParser.ContentContext> templates)
         {
             _data = data;
+            _templates = templates;
         }
 
         public override string VisitTemplate(GoTextTemplateParser.TemplateContext context)
@@ -254,6 +258,14 @@ public static class TemplateEngine
                 return Visit(context.forBlock());
             if (context.rangeBlock() != null)
                 return Visit(context.rangeBlock());
+            if (context.withBlock() != null)
+                return Visit(context.withBlock());
+            if (context.defineBlock() != null)
+                return Visit(context.defineBlock());
+            if (context.templateCall() != null)
+                return Visit(context.templateCall());
+            if (context.blockBlock() != null)
+                return Visit(context.blockBlock());
             return string.Empty;
         }
 
@@ -307,7 +319,7 @@ public static class TemplateEngine
                 {
                     [itemName] = item!,
                 };
-                var v = new ReplacementVisitor(child);
+                var v = new ReplacementVisitor(child, _templates);
                 sb.Append(v.Visit(context.content()));
             }
 
@@ -357,7 +369,7 @@ public static class TemplateEngine
                     if (secondVar != null)
                         root[secondVar] = entry.Value!;
 
-                    var v = new ReplacementVisitor(root);
+                    var v = new ReplacementVisitor(root, _templates);
                     sb.Append(v.Visit(context.content()));
                 }
             }
@@ -384,7 +396,7 @@ public static class TemplateEngine
                         root[firstVar] = item!;
                     }
 
-                    var v = new ReplacementVisitor(root);
+                    var v = new ReplacementVisitor(root, _templates);
                     sb.Append(v.Visit(context.content()));
                     index++;
                 }
@@ -394,6 +406,93 @@ public static class TemplateEngine
                 return Visit(context.elseBlock().content());
 
             return sb.ToString();
+        }
+
+        public override string VisitWithBlock(GoTextTemplateParser.WithBlockContext context)
+        {
+            object? value = EvaluatePipeline(context.pipeline());
+            if (IsTrue(value))
+            {
+                var root = value is IDictionary<string, object> dict
+                    ? new Dictionary<string, object>(dict)
+                    : ToDictionary(value!);
+
+                foreach (var kv in _data)
+                    if (!root.ContainsKey(kv.Key))
+                        root[kv.Key] = kv.Value;
+
+                var v = new ReplacementVisitor(root, _templates);
+                return v.Visit(context.content());
+            }
+
+            if (context.elseBlock() != null)
+                return Visit(context.elseBlock().content());
+
+            return string.Empty;
+        }
+
+        public override string VisitDefineBlock(GoTextTemplateParser.DefineBlockContext context)
+        {
+            string name = context.STRING().GetText();
+            name = name.Substring(1, name.Length - 2);
+            _templates[name] = context.content();
+            return string.Empty;
+        }
+
+        public override string VisitTemplateCall(GoTextTemplateParser.TemplateCallContext context)
+        {
+            string name = context.STRING().GetText();
+            name = name.Substring(1, name.Length - 2);
+            if (!_templates.TryGetValue(name, out var tmpl))
+                return string.Empty;
+
+            object? ctxObj = context.pipeline() != null ? EvaluatePipeline(context.pipeline()) : _data;
+
+            IDictionary<string, object> root;
+            if (ctxObj is IDictionary<string, object> dict)
+                root = new Dictionary<string, object>(dict);
+            else if (ctxObj == _data)
+                root = new Dictionary<string, object>(_data);
+            else if (ctxObj != null)
+                root = ToDictionary(ctxObj!);
+            else
+                root = new Dictionary<string, object>();
+
+            foreach (var kv in _data)
+                if (!root.ContainsKey(kv.Key))
+                    root[kv.Key] = kv.Value;
+
+            var v = new ReplacementVisitor(root, _templates);
+            return v.Visit(tmpl);
+        }
+
+        public override string VisitBlockBlock(GoTextTemplateParser.BlockBlockContext context)
+        {
+            string name = context.STRING().GetText();
+            name = name.Substring(1, name.Length - 2);
+
+            if (!_templates.TryGetValue(name, out var tmpl))
+            {
+                _templates[name] = context.content();
+                tmpl = context.content();
+            }
+
+            object? ctxObj = EvaluatePipeline(context.pipeline());
+
+            IDictionary<string, object> root;
+            if (ctxObj is IDictionary<string, object> dict)
+                root = new Dictionary<string, object>(dict);
+            else if (ctxObj != null)
+                root = ToDictionary(ctxObj!);
+            else
+                root = new Dictionary<string, object>();
+
+            foreach (var kv in _data)
+                if (!root.ContainsKey(kv.Key))
+                    root[kv.Key] = kv.Value;
+
+            var v = new ReplacementVisitor(root, _templates);
+            return v.Visit(tmpl);
         }
 
         private object? ResolvePath(GoTextTemplateParser.PathContext context)
@@ -476,6 +575,19 @@ public static class TemplateEngine
             }
 
             return null;
+        }
+
+        private object? EvaluatePipeline(GoTextTemplateParser.PipelineContext context)
+        {
+            var commands = context.command();
+            object? result = null;
+            bool first = true;
+            foreach (var cmd in commands)
+            {
+                result = ExecuteCommand(cmd, first ? null : result);
+                first = false;
+            }
+            return result;
         }
 
         private object? EvaluateValue(GoTextTemplateParser.ValueContext context)
