@@ -106,6 +106,9 @@ Console.WriteLine(output);
 See the unit tests for more examples covering loops, conditionals and range
 expressions.
 
+## Claude's suggestions
+<script src="https://gist.github.com/yetanotherchris/c80d0fadb5a2ee5b4beb0a4384020dbf.js"></script>
+
 ## License
 
 This project is released under the MIT license. Source code was produced by
