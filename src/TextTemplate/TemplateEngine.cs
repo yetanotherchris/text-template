@@ -150,10 +150,8 @@ public static class TemplateEngine
                 if (v is ICollection col) return col.Count;
                 if (v is IEnumerable enumerable)
                 {
-                    int count = 0;
-                    foreach (var _ in enumerable)
-                        count++;
-                    return count;
+                    var list = enumerable.Cast<object?>().ToList();
+                    return list.Count;
                 }
                 return 0;
             },
