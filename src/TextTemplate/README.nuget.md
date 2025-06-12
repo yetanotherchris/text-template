@@ -2,32 +2,22 @@
 
 [![NuGet](https://img.shields.io/nuget/v/go-text-template.svg)](https://www.nuget.org/packages/go-text-template/)
 
-This project is a C# adaptation of Go's template engine. It began as an
-experiment to see whether OpenAI Codex could port the Go implementation to
-.NET. Claude.AI helped with explanations and refinements along the way.
-The source code in this repository was largely produced by Codex with input
-from Claude.AI, and this README itself was also authored using Codex.
+This project is a C# adaptation of Go's template engine. It began as an experiment to see whether OpenAI Codex could port the Go implementation to .NET. Claude.AI helped with explanations and refinements along the way.
 
 The original Go package can be found here:
 
 - https://pkg.go.dev/text/template#pkg-overview
 - https://cs.opensource.google/go/go/+/refs/tags/go1.24.4:src/text/template/template.go
 
-Currently this repository demonstrates a relatively small but functional
-implementation. The `TemplateEngine.Process` helper reads templates using the
-ANTLR-generated `GoTemplateLexer` and `GoTemplateParser` and performs variable
-substitution, loops and conditionals.
+Currently this repository demonstrates a relatively small but functional implementation. The `TemplateEngine.Process` helper reads templates using the ANTLR-generated `GoTemplateLexer` and `GoTemplateParser` and performs variable substitution, loops and conditionals.
 
 ## Features
 
-- Replace `{{ variable }}` placeholders with values from dictionaries or model
-  objects.
+- Replace `{{ variable }}` placeholders with values from dictionaries or model objects.
 - Conditional blocks with `if`, `else if` and `else` clauses.
 - `for` loops and Go-style `range` loops over arrays, collections and maps.
-- Built-in functions: `eq`, `ne`, numeric comparisons (`lt`, `le`, `gt`, `ge`),
-  logical operators (`and`, `or`, `not`).
-- Access nested properties, map keys and indexes, including dynamic indexing via
-  variables.
+- Built-in functions: `eq`, `ne`, numeric comparisons (`lt`, `le`, `gt`, `ge`), logical operators (`and`, `or`, `not`).
+- Access nested properties, map keys and indexes, including dynamic indexing via variables.
 - Whitespace trimming with `{{-` and `-}}` and comment syntax `{{/* ... */}}`.
 
 ## Example Scenarios
@@ -105,14 +95,13 @@ var output = TemplateEngine.Process(letter, new
 Console.WriteLine(output);
 ```
 
-See the unit tests for more examples covering loops, conditionals and range
-expressions.
+See the unit tests for more examples covering loops, conditionals and range expressions.
 
 ## Claude's suggestions
 https://gist.github.com/yetanotherchris/c80d0fadb5a2ee5b4beb0a4384020dbf.js
 
 ## License
 
-This project is released under the MIT license. Source code was produced by
-OpenAI Codex with assistance from Claude.AI.
+This project is released under the MIT license. Source code was produced by OpenAI Codex with assistance from Claude.AI.
 This README was written using OpenAI Codex.
+
