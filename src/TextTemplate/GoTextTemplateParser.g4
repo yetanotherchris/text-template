@@ -3,7 +3,15 @@ options { tokenVocab=GoTextTemplateLexer; }
 
 template : content EOF;
 content  : part*;
-part     : TEXT | placeholder | ifBlock | forBlock | rangeBlock;
+part     : TEXT
+        | placeholder
+        | ifBlock
+        | forBlock
+        | rangeBlock
+        | withBlock
+        | defineBlock
+        | templateCall
+        | blockBlock;
 
 placeholder : open pipeline close;
 
@@ -52,6 +60,22 @@ forBlock : open FOR IDENT IN path close content (elseBlock)? open END close;
 
 rangeBlock
     : open RANGE rangeClause close content (elseBlock)? open END close
+    ;
+
+withBlock
+    : open WITH pipeline close content (elseBlock)? open END close
+    ;
+
+defineBlock
+    : open DEFINE STRING close content open END close
+    ;
+
+templateCall
+    : open TEMPLATE STRING (pipeline)? close
+    ;
+
+blockBlock
+    : open BLOCK STRING pipeline close content open END close
     ;
 
 rangeClause

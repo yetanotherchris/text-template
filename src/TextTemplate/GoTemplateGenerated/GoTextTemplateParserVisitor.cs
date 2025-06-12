@@ -19,7 +19,6 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
-namespace TextTemplate {
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using IToken = Antlr4.Runtime.IToken;
@@ -123,6 +122,30 @@ public interface IGoTextTemplateParserVisitor<Result> : IParseTreeVisitor<Result
 	/// <return>The visitor result.</return>
 	Result VisitRangeBlock([NotNull] GoTextTemplateParser.RangeBlockContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.withBlock"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitWithBlock([NotNull] GoTextTemplateParser.WithBlockContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.defineBlock"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitDefineBlock([NotNull] GoTextTemplateParser.DefineBlockContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.templateCall"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitTemplateCall([NotNull] GoTextTemplateParser.TemplateCallContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.blockBlock"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitBlockBlock([NotNull] GoTextTemplateParser.BlockBlockContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.rangeClause"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -153,4 +176,3 @@ public interface IGoTextTemplateParserVisitor<Result> : IParseTreeVisitor<Result
 	/// <return>The visitor result.</return>
 	Result VisitClose([NotNull] GoTextTemplateParser.CloseContext context);
 }
-} // namespace TextTemplate

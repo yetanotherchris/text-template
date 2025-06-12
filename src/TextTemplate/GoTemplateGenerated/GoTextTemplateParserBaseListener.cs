@@ -19,7 +19,6 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
-namespace TextTemplate {
 
 using Antlr4.Runtime.Misc;
 using IErrorNode = Antlr4.Runtime.Tree.IErrorNode;
@@ -217,6 +216,54 @@ public partial class GoTextTemplateParserBaseListener : IGoTextTemplateParserLis
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitRangeBlock([NotNull] GoTextTemplateParser.RangeBlockContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.withBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterWithBlock([NotNull] GoTextTemplateParser.WithBlockContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.withBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitWithBlock([NotNull] GoTextTemplateParser.WithBlockContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.defineBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterDefineBlock([NotNull] GoTextTemplateParser.DefineBlockContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.defineBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitDefineBlock([NotNull] GoTextTemplateParser.DefineBlockContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.templateCall"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterTemplateCall([NotNull] GoTextTemplateParser.TemplateCallContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.templateCall"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitTemplateCall([NotNull] GoTextTemplateParser.TemplateCallContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.blockBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterBlockBlock([NotNull] GoTextTemplateParser.BlockBlockContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.blockBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitBlockBlock([NotNull] GoTextTemplateParser.BlockBlockContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.rangeClause"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -290,4 +337,3 @@ public partial class GoTextTemplateParserBaseListener : IGoTextTemplateParserLis
 	/// <remarks>The default implementation does nothing.</remarks>
 	public virtual void VisitErrorNode([NotNull] IErrorNode node) { }
 }
-} // namespace TextTemplate

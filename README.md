@@ -30,6 +30,7 @@ substitution, loops and conditionals.
 - Access nested properties, map keys and indexes, including dynamic indexing via
   variables.
 - Whitespace trimming with `{{-` and `-}}` and comment syntax `{{/* ... */}}`.
+- Support for `with`, `define`, `template` and `block` directives.
 
 ## Example Scenarios
 
@@ -122,7 +123,6 @@ var result = TemplateEngine.Process(template, new {});
 
 ## Not Implemented Yet
 
-- `with`, `define`, `template` and `block` directives.
 - Custom functions beyond basic comparisons and boolean operators.
 - Custom delimiter support.
 
