@@ -605,4 +605,49 @@ Josie";
         });
         result.ShouldBe("helloworld");
     }
+
+    [Fact]
+    public void AntlrTemplate_PipelineLen()
+    {
+        const string tmpl = "{{ len .Items }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new[] { 1, 2, 3 }
+        });
+        result.ShouldBe("3");
+    }
+
+    [Fact]
+    public void AntlrTemplate_PipelineIndex()
+    {
+        const string tmpl = "{{ index .Items 1 }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new[] { "a", "b", "c" }
+        });
+        result.ShouldBe("b");
+    }
+
+    [Fact]
+    public void AntlrTemplate_PipelineSliceString()
+    {
+        const string tmpl = "{{ slice .Txt 1 4 }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Txt"] = "hello"
+        });
+        result.ShouldBe("ell");
+    }
+
+    [Fact]
+    public void AntlrTemplate_PipelineCall()
+    {
+        const string tmpl = "{{ call .Add 2 3 }}";
+        var data = new Dictionary<string, object>
+        {
+            ["Add"] = new Func<int, int, int>((a, b) => a + b)
+        };
+        var result = TemplateEngine.Process(tmpl, data);
+        result.ShouldBe("5");
+    }
 }
