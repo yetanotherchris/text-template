@@ -11,9 +11,8 @@ public class FullTemplateFromFileTests
     [Fact]
     public void AntlrTemplate_FileTemplate_AllFeatures()
     {
-        string baseDir = AppContext.BaseDirectory;
-        string templatePath = Path.Combine(baseDir, "TestData", "full_template.txt");
-        string expectedPath = Path.Combine(baseDir, "TestData", "full_template_expected.txt");
+        string templatePath = TestDataHelper.GetPath("full_template.txt");
+        string expectedPath = TestDataHelper.GetPath("full_template_expected.txt");
 
         string template = File.ReadAllText(templatePath);
         string expected = File.ReadAllText(expectedPath);
