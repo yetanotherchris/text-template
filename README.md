@@ -1,5 +1,7 @@
 # text/template
 
+[![NuGet](https://img.shields.io/nuget/v/go-text-template.svg)](https://www.nuget.org/packages/go-text-template/)
+
 This project is a C# adaptation of Go's template engine. It began as an
 experiment to see whether OpenAI Codex could port the Go implementation to
 .NET. Claude.AI helped with explanations and refinements along the way.
