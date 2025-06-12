@@ -16,9 +16,6 @@ IN      : 'in';
 COLONEQ : ':=';
 COMMA   : ',';
 DOLLAR  : '$';
-DOT     : '.';
-LBRACK  : '[';
-RBRACK  : ']';
 NUMBER  : [0-9]+;
 STRING  : '"' (~["\\] | '\\' .)* '"';
 BOOLEAN : 'true' | 'false';
@@ -32,6 +29,10 @@ AND     : 'and';
 OR      : 'or';
 NOT     : 'not';
 PIPE    : '|';
+PATH
+    : ('.'? IDENT (('.' IDENT) | ('[' ~']'* ']'))+)
+    | ('.' IDENT)
+    ;
 IDENT   : [a-zA-Z_][a-zA-Z0-9_]*;
 COMMENT : '/*' .*? '*/' -> skip;
 WS      : [ \t\r\n]+ -> skip;

@@ -11,7 +11,7 @@ pipeline
     : path (PIPE IDENT)*
     ;
 
-path : (DOT? IDENT) ( (DOT IDENT) | (LBRACK (NUMBER | STRING | IDENT) RBRACK) )*;
+path : IDENT | PATH;
 
 expr
     : path
@@ -21,8 +21,8 @@ expr
     | LE value value
     | GT value value
     | GE value value
-    | AND expr expr
-    | OR expr expr
+    | AND expr expr+
+    | OR expr expr+
     | NOT expr
     ;
 

@@ -346,12 +346,22 @@ public static class TemplateEngine
 
             if (context.AND() != null)
             {
-                return IsTrue(EvaluateExpr(context.expr(0))) && IsTrue(EvaluateExpr(context.expr(1)));
+                foreach (var e in context.expr())
+                {
+                    if (!IsTrue(EvaluateExpr(e)))
+                        return false;
+                }
+                return true;
             }
 
             if (context.OR() != null)
             {
-                return IsTrue(EvaluateExpr(context.expr(0))) || IsTrue(EvaluateExpr(context.expr(1)));
+                foreach (var e in context.expr())
+                {
+                    if (IsTrue(EvaluateExpr(e)))
+                        return true;
+                }
+                return false;
             }
 
             if (context.NOT() != null)

@@ -19,7 +19,6 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
-namespace TextTemplate {
 
 using Antlr4.Runtime.Misc;
 using IErrorNode = Antlr4.Runtime.Tree.IErrorNode;
@@ -84,6 +83,18 @@ public partial class GoTextTemplateParserBaseListener : IGoTextTemplateParserLis
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitPlaceholder([NotNull] GoTextTemplateParser.PlaceholderContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.pipeline"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterPipeline([NotNull] GoTextTemplateParser.PipelineContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="GoTextTemplateParser.pipeline"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitPipeline([NotNull] GoTextTemplateParser.PipelineContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="GoTextTemplateParser.path"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -254,4 +265,3 @@ public partial class GoTextTemplateParserBaseListener : IGoTextTemplateParserLis
 	/// <remarks>The default implementation does nothing.</remarks>
 	public virtual void VisitErrorNode([NotNull] IErrorNode node) { }
 }
-} // namespace TextTemplate
