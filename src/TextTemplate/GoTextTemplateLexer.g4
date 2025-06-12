@@ -31,6 +31,7 @@ GE      : 'ge';
 AND     : 'and';
 OR      : 'or';
 NOT     : 'not';
+PIPE    : '|';
 IDENT   : [a-zA-Z_][a-zA-Z0-9_]*;
 COMMENT : '/*' .*? '*/' -> skip;
 WS      : [ \t\r\n]+ -> skip;

@@ -3,7 +3,9 @@ grammar GoTextTemplate;
 template : part* EOF;
 part : TEXT | placeholder | ifBlock | forBlock;
 
-placeholder : open path close;
+placeholder : open pipeline close;
+
+pipeline : path (PIPE IDENT)* ;
 
 path : (DOT? IDENT) ( (DOT IDENT) | (LBRACK (NUMBER | STRING | IDENT) RBRACK) )*;
 
@@ -30,6 +32,7 @@ LBRACK  : '[';
 RBRACK  : ']';
 NUMBER  : [0-9]+;
 STRING  : '"' (~["\\] | '\\' .)* '"';
+PIPE    : '|';
 IDENT   : [a-zA-Z_][a-zA-Z0-9_]*;
 COMMENT : '/*' .*? '*/' -> skip;
 WS      : [ \t\r\n]+ -> skip;

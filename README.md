@@ -26,6 +26,7 @@ substitution, loops and conditionals.
 - `for` loops and Go-style `range` loops over arrays, collections and maps.
 - Built-in functions: `eq`, `ne`, numeric comparisons (`lt`, `le`, `gt`, `ge`),
   logical operators (`and`, `or`, `not`).
+- Basic pipelines with the `lower` function for transforming output.
 - Access nested properties, map keys and indexes, including dynamic indexing via
   variables.
 - Whitespace trimming with `{{-` and `-}}` and comment syntax `{{/* ... */}}`.
@@ -68,9 +69,13 @@ substitution, loops and conditionals.
 
 - Use `{{/* comment */}}` to embed comments in templates
 
+### 6. Pipelines
+
+- Chain functions with `|`, e.g. `{{ .Name | lower }}`
+
 ## Not Implemented Yet
 
-- Pipelines and chaining of actions.
+ - Additional pipeline functions and chaining of actions.
 - `with`, `define`, `template` and `block` directives.
 - Custom functions beyond basic comparisons and boolean operators.
 - Custom delimiter support.

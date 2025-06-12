@@ -19,7 +19,6 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
-namespace TextTemplate {
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using IToken = Antlr4.Runtime.IToken;
@@ -56,6 +55,12 @@ public interface IGoTextTemplateParserVisitor<Result> : IParseTreeVisitor<Result
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitPlaceholder([NotNull] GoTextTemplateParser.PlaceholderContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.pipeline"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitPipeline([NotNull] GoTextTemplateParser.PipelineContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.path"/>.
 	/// </summary>
@@ -135,4 +140,3 @@ public interface IGoTextTemplateParserVisitor<Result> : IParseTreeVisitor<Result
 	/// <return>The visitor result.</return>
 	Result VisitClose([NotNull] GoTextTemplateParser.CloseContext context);
 }
-} // namespace TextTemplate

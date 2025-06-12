@@ -5,7 +5,11 @@ template : content EOF;
 content  : part*;
 part     : TEXT | placeholder | ifBlock | forBlock | rangeBlock;
 
-placeholder : open path close;
+placeholder : open pipeline close;
+
+pipeline
+    : path (PIPE IDENT)*
+    ;
 
 path : (DOT? IDENT) ( (DOT IDENT) | (LBRACK (NUMBER | STRING | IDENT) RBRACK) )*;
 

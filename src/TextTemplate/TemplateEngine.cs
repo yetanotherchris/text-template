@@ -112,6 +112,10 @@ public static class TemplateEngine
     private class ReplacementVisitor : GoTextTemplateParserBaseVisitor<string>
     {
         private readonly IDictionary<string, object> _data;
+        private static readonly Dictionary<string, Func<object?, object?>> PipelineFuncs = new()
+        {
+            ["lower"] = v => v?.ToString()?.ToLowerInvariant()
+        };
 
         public ReplacementVisitor(IDictionary<string, object> data)
         {
@@ -151,7 +155,12 @@ public static class TemplateEngine
 
         public override string VisitPlaceholder(GoTextTemplateParser.PlaceholderContext context)
         {
-            var value = ResolvePath(context.path());
+            var pipeline = context.pipeline();
+            object? value = ResolvePath(pipeline.path());
+            foreach (var fn in pipeline.IDENT())
+            {
+                value = ApplyPipelineFunction(fn.GetText(), value);
+            }
             return value?.ToString() ?? string.Empty;
         }
 
@@ -379,6 +388,13 @@ public static class TemplateEngine
             }
 
             return null;
+        }
+
+        private object? ApplyPipelineFunction(string name, object? input)
+        {
+            if (PipelineFuncs.TryGetValue(name, out var fn))
+                return fn(input);
+            return input;
         }
 
         private sealed class PathReference

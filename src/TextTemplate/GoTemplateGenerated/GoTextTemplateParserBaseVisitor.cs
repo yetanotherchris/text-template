@@ -19,7 +19,6 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
-namespace TextTemplate {
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using IToken = Antlr4.Runtime.IToken;
@@ -75,6 +74,16 @@ public partial class GoTextTemplateParserBaseVisitor<Result> : AbstractParseTree
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	public virtual Result VisitPlaceholder([NotNull] GoTextTemplateParser.PlaceholderContext context) { return VisitChildren(context); }
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.pipeline"/>.
+	/// <para>
+	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
+	/// on <paramref name="context"/>.
+	/// </para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	public virtual Result VisitPipeline([NotNull] GoTextTemplateParser.PipelineContext context) { return VisitChildren(context); }
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="GoTextTemplateParser.path"/>.
 	/// <para>
@@ -206,4 +215,3 @@ public partial class GoTextTemplateParserBaseVisitor<Result> : AbstractParseTree
 	/// <return>The visitor result.</return>
 	public virtual Result VisitClose([NotNull] GoTextTemplateParser.CloseContext context) { return VisitChildren(context); }
 }
-} // namespace TextTemplate
