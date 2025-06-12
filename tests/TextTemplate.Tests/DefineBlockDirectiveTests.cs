@@ -53,9 +53,8 @@ public class DefineBlockDirectiveTests
     [Fact]
     public void FileTemplate_DefineAndBlock()
     {
-        string baseDir = AppContext.BaseDirectory;
-        string templatePath = Path.Combine(baseDir, "TestData", "define_block_template.txt");
-        string expectedPath = Path.Combine(baseDir, "TestData", "define_block_expected.txt");
+        string templatePath = TestDataHelper.GetPath("define_block_template.txt");
+        string expectedPath = TestDataHelper.GetPath("define_block_expected.txt");
         string template = File.ReadAllText(templatePath);
         string expected = File.ReadAllText(expectedPath);
         var result = TemplateEngine.Process(template, new Dictionary<string, object>
