@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-web-app-deployment
+  namespace: production
+  labels:
+    app: my-web-app
+    version: "1.2.3"
+    environment: prod
+    team: backend
+    cost-center: engineering
+    project: web-platform
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: my-web-app
+  template:
+    metadata:
+      labels:
+        app: my-web-app
+        version: "1.2.3"
+    spec:
+      containers:
+      - name: my-web-app
+        image: myregistry.com/my-web-app:v1.2.3
+        ports:
+        - containerPort: 80
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://db.example.com:5432/myapp"
+        - name: REDIS_HOST
+          value: "redis.example.com"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: API_KEY
+          value: "secret-api-key-123"
+        resources:
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config
+          readOnly: true
+        - name: secret-volume
+          mountPath: /etc/secrets
+          readOnly: true
+        - name: data-volume
+          mountPath: /var/data
+      volumes:
+      - name: config-volume
+        configMap:
+          name: my-web-app-config
+      - name: secret-volume
+        secret:
+          secretName: my-web-app-secrets
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: my-web-app-data
+      nodeSelector:
+        kubernetes.io/os: linux
+        node-type: web-tier
+      tolerations:
+      - key: "node-type"
+        operator: "Equal"
+        value: "web-tier"
+        effect: "NoSchedule"
+      - key: "dedicated"
+        operator: "Equal"
+        value: "web-app"
+        effect: "NoExecute"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-web-app-service
+  namespace: production
+  labels:
+    app: my-web-app
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    nodePort: 30080
+  selector:
+    app: my-web-app
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-web-app-ingress
+  namespace: production
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rewrite-target: "/"
+spec:
+  tls:
+  - hosts:
+    - myapp.example.com
+    - api.myapp.example.com
+    secretName: myapp-tls-cert
+  rules:
+  - host: myapp.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: my-web-app-service
+            port:
+              number: 80
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: my-web-app-service
+            port:
+              number: 80
+  - host: api.myapp.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: my-web-app-service
+            port:
+              number: 80
