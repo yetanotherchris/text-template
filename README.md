@@ -33,100 +33,91 @@ substitution, loops and conditionals.
 
 ## Example Scenarios
 
-### 1. Variable Interpolation
-
-#### Access properties
-`{{ .Property }}`
-
-#### Nested property access
-`{{ .User.Name }}`
-
-#### Index arrays or slices
-`{{ .Items[0] }}`
-
-#### Access map entries
-`{{ .Data.key }}`
-
-#### Control whitespace
-`{{- .Name -}}`
-
-### 2. Conditional Statements
-
-#### Basic `if` blocks
-`{{ if condition }}...{{ end }}`
-
-#### `if`/`else` blocks
-`{{ if condition }}...{{ else }}...{{ end }}`
-
-#### `else if` chains
-`{{ if condition }}...{{ else if other }}...{{ end }}`
-
-#### Supported conditions include
-- `{{ if .IsActive }}`
-- `{{ if eq .Status "active" }}`
-- `{{ if .User }}`
-
-### 3. Loop Statements
-
-#### Iterate slices or arrays
-`{{ range .Items }}...{{ end }}`
-
-#### Capture index/value
-`{{ range $i, $v := .Items }}...{{ end }}`
-
-#### Iterate maps
-`{{ range .Map }}...{{ end }}`
-
-#### Map key/value variables
-`{{ range $k, $v := .Map }}...{{ end }}`
-
-#### Handle empty collections
-`{{ range .Items }}...{{ else }}...{{ end }}`
-
-### 4. Built-in Functions
-
-#### Equality and inequality
-`eq`, `ne`
-
-#### Numeric comparisons
-`lt`, `le`, `gt`, `ge`
-
-#### Logical operators
-`and`, `or`, `not`
-
-### 5. Comments
-
-#### Embedding comments
-`{{/* comment */}}`
-
-### 6. Pipelines
-
-#### Chaining functions with `|`
-`{{ .Name | lower }}`
-
-#### Available pipeline helpers include
-- `lower` - convert to lowercase
-- `print` - concatenate values using default formatting
-- `printf` - printf-style formatting using `SprintfFormatter`
-- `html` - HTML escape the value
-- `js` - JavaScript escape the value
-- `urlquery` - escape for URL query parameters
-- `len` - length of a collection or string
-- `index` - retrieve an element by index or key
-- `slice` - slice strings or lists
-- `call` - invoke a function value
-
-Registered functions can be invoked via `call` by name. Template example:
-
 ```
+// -- 1. Variable Interpolation
+// Access properties
+{{ .Property }}
+
+// Nested property access
+{{ .User.Name }}
+
+// Index arrays or slices
+{{ .Items[0] }}
+
+// Access map entries
+{{ .Data.key }}
+
+// Control whitespace
+{{- .Name -}}
+
+// -- 2. Conditional Statements
+// Basic if blocks
+{{ if condition }}...{{ end }}
+
+// if/else blocks
+{{ if condition }}...{{ else }}...{{ end }}
+
+// else if chains
+{{ if condition }}...{{ else if other }}...{{ end }}
+
+// Supported conditions include
+{{ if .IsActive }}
+{{ if eq .Status "active" }}
+{{ if .User }}
+
+// -- 3. Loop Statements
+// Iterate slices or arrays
+{{ range .Items }}...{{ end }}
+
+// Capture index/value
+{{ range $i, $v := .Items }}...{{ end }}
+
+// Iterate maps
+{{ range .Map }}...{{ end }}
+
+// Map key/value variables
+{{ range $k, $v := .Map }}...{{ end }}
+
+// Handle empty collections
+{{ range .Items }}...{{ else }}...{{ end }}
+
+// -- 4. Built-in Functions
+// Equality and inequality
+// eq, ne
+
+// Numeric comparisons
+// lt, le, gt, ge
+
+// Logical operators
+// and, or, not
+
+// Registered functions can be invoked via call
 {{ call "Add" 1 2 }}
-```
 
-```csharp
 const string template = "{{ call \"Add\" 1 2 }}";
 TemplateEngine.RegisterFunction("Add", new Func<int, int, int>((a, b) => a + b));
 var result = TemplateEngine.Process(template, new {});
 // result == "3"
+
+// -- 5. Comments
+// Embedding comments
+{{/* comment */}}
+
+// -- 6. Pipelines
+// Chaining functions with |
+{{ .Name | lower }}
+
+// Available pipeline helpers include
+// lower - convert to lowercase
+// print - concatenate values using default formatting
+// printf - printf-style formatting using SprintfFormatter
+// html - HTML escape the value
+// js - JavaScript escape the value
+// urlquery - escape for URL query parameters
+// len - length of a collection or string
+// index - retrieve an element by index or key
+// slice - slice strings or lists
+// call - invoke a function value
 ```
 
 ## Not Implemented Yet
