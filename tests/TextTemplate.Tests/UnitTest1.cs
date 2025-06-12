@@ -1,4 +1,5 @@
 using Xunit;
+using Shouldly;
 using TextTemplate;
 using Antlr4.Runtime;
 using System.Collections.Generic;
@@ -26,7 +27,7 @@ public class UnitTest1
     {
         const string text = "Hello world";
         var result = TemplateEngine.Process(text, new Dictionary<string, object>());
-        Assert.Equal("Hello world", result);
+        result.ShouldBe("Hello world");
     }
 
     [Fact]
@@ -38,7 +39,7 @@ public class UnitTest1
             ["Name"] = "World"
         });
 
-        Assert.Equal("Hello World!", result);
+        result.ShouldBe("Hello World!");
     }
 
     [Fact]
@@ -50,7 +51,7 @@ public class UnitTest1
             ["Name"] = "Alice",
             ["Gift"] = "book"
         });
-        Assert.Equal("Hello Alice, you brought a book.", result);
+        result.ShouldBe("Hello Alice, you brought a book.");
     }
 
     [Fact]
@@ -79,7 +80,7 @@ Josie";
             "Best wishes,\n" +
             "Josie";
 
-        Assert.Equal(expected, result);
+        result.ShouldBe(expected);
     }
 
     [Fact]
@@ -90,7 +91,7 @@ Josie";
         {
             ["Items"] = new[] { 1, 2, 3 }
         });
-        Assert.Equal("Numbers: 1,2,3,", result);
+        result.ShouldBe("Numbers: 1,2,3,");
     }
 
     [Fact]
@@ -101,7 +102,7 @@ Josie";
         {
             ["User"] = new Recipient { Name = "John" }
         });
-        Assert.Equal("User: John", result);
+        result.ShouldBe("User: John");
     }
 
     [Fact]
@@ -113,7 +114,7 @@ Josie";
             ["A"] = false,
             ["B"] = true
         });
-        Assert.Equal("B", result);
+        result.ShouldBe("B");
     }
 
     [Fact]
@@ -124,7 +125,7 @@ Josie";
         {
             ["Status"] = "active"
         });
-        Assert.Equal("OK", result);
+        result.ShouldBe("OK");
     }
 
     [Fact]
@@ -135,7 +136,7 @@ Josie";
         {
             ["Count"] = 5
         });
-        Assert.Equal("non-zero", result);
+        result.ShouldBe("non-zero");
     }
 
     [Fact]
@@ -148,7 +149,7 @@ Josie";
             ["A"] = 1,
             ["B"] = 2
         });
-        Assert.Equal("ltlegtge", result);
+        result.ShouldBe("ltlegtge");
     }
 
     [Fact]
@@ -160,7 +161,7 @@ Josie";
             ["IsActive"] = true,
             ["IsValid"] = true
         });
-        Assert.Equal("ok", result);
+        result.ShouldBe("ok");
     }
 
     [Fact]
@@ -171,7 +172,7 @@ Josie";
         {
             ["Hidden"] = false
         });
-        Assert.Equal("show", result);
+        result.ShouldBe("show");
     }
 
     [Fact]
@@ -187,7 +188,7 @@ Josie";
             ["Y"] = false,
             ["Z"] = true
         });
-        Assert.Equal("and or", result);
+        result.ShouldBe("and or");
     }
 
     [Fact]
@@ -198,7 +199,7 @@ Josie";
         {
             ["User"] = new Recipient()
         });
-        Assert.Equal("Yes", result);
+        result.ShouldBe("Yes");
     }
 
     [Fact]
@@ -209,7 +210,7 @@ Josie";
         {
             ["Items"] = new int[0]
         });
-        Assert.Equal("Empty", result);
+        result.ShouldBe("Empty");
     }
 
     [Fact]
@@ -218,7 +219,7 @@ Josie";
         const string tmpl = "Hello {{ .Name }}!";
         var model = new Recipient { Name = "World" };
         var result = TemplateEngine.Process(tmpl, model);
-        Assert.Equal("Hello World!", result);
+        result.ShouldBe("Hello World!");
     }
 
     [Fact]
@@ -229,7 +230,7 @@ Josie";
         {
             ["Items"] = new[] { "one", "two" }
         });
-        Assert.Equal("First: one", result);
+        result.ShouldBe("First: one");
     }
 
     [Fact]
@@ -241,7 +242,7 @@ Josie";
             ["Items"] = new[] { "zero", "one", "two" },
             ["CurrentIndex"] = 2
         });
-        Assert.Equal("Current: two", result);
+        result.ShouldBe("Current: two");
     }
 
     [Fact]
@@ -252,7 +253,7 @@ Josie";
         {
             ["Data"] = new Dictionary<string, object> { ["key"] = "val" }
         });
-        Assert.Equal("Value: val", result);
+        result.ShouldBe("Value: val");
     }
 
     [Fact]
@@ -263,7 +264,7 @@ Josie";
         {
             ["Data"] = new Dictionary<string, object> { ["key-with-dashes"] = "x" }
         });
-        Assert.Equal("Val: x", result);
+        result.ShouldBe("Val: x");
     }
 
     [Fact]
@@ -274,7 +275,7 @@ Josie";
         {
             ["Name"] = "X"
         });
-        Assert.Equal("AXB", result);
+        result.ShouldBe("AXB");
     }
 
     [Fact]
@@ -285,7 +286,7 @@ Josie";
         {
             ["Field"] = "X"
         });
-        Assert.Equal("X", result);
+        result.ShouldBe("X");
     }
 
     [Fact]
@@ -296,7 +297,7 @@ Josie";
         {
             ["Field"] = "X"
         });
-        Assert.Equal("X", result);
+        result.ShouldBe("X");
     }
 
     [Fact]
@@ -307,7 +308,7 @@ Josie";
         {
             ["Field"] = "X"
         });
-        Assert.Equal("X", result);
+        result.ShouldBe("X");
     }
 
     [Fact]
@@ -322,7 +323,7 @@ Josie";
                 new Dictionary<string, object> { ["Name"] = "B" }
             }
         });
-        Assert.Equal("AB", result);
+        result.ShouldBe("AB");
     }
 
     [Fact]
@@ -333,7 +334,7 @@ Josie";
         {
             ["Items"] = new[] { "a", "b", "c" }
         });
-        Assert.Equal("a;b;c;", result);
+        result.ShouldBe("a;b;c;");
     }
 
     [Fact]
@@ -344,7 +345,7 @@ Josie";
         {
             ["Items"] = new[] { "x", "y" }
         });
-        Assert.Equal("0=x,1=y,", result);
+        result.ShouldBe("0=x,1=y,");
     }
 
     [Fact]
@@ -355,7 +356,7 @@ Josie";
         {
             ["Data"] = new Dictionary<string, object> { ["a"] = 1, ["b"] = 2 }
         });
-        Assert.Equal("a=1,b=2,", result);
+        result.ShouldBe("a=1,b=2,");
     }
 
     [Fact]
@@ -366,7 +367,7 @@ Josie";
         {
             ["Empty"] = new int[0]
         });
-        Assert.Equal("Empty", result);
+        result.ShouldBe("Empty");
     }
 
     [Fact]
@@ -382,7 +383,7 @@ Josie";
             ["Items"] = Array.Empty<string>()
         });
         const string expected = "\n  No items found\n";
-        Assert.Equal(expected, result);
+        result.ShouldBe(expected);
     }
 
     [Fact]
@@ -418,7 +419,7 @@ Josie";
             }
         });
         const string expected = "\n  Category: CatA\n  \n    - A1\n  \n    - A2\n  \n\n  Category: CatB\n  \n    - B1\n  \n";
-        Assert.Equal(expected, result);
+        result.ShouldBe(expected);
     }
 
     [Fact]
@@ -434,7 +435,7 @@ Josie";
             ["EmptySlice"] = Array.Empty<int>()
         });
         const string expected = "\n  Empty slice message\n";
-        Assert.Equal(expected, result);
+        result.ShouldBe(expected);
     }
 
     [Fact]
@@ -442,7 +443,7 @@ Josie";
     {
         const string tmpl = "Hello {{/* ignore */}}World";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
-        Assert.Equal("Hello World", result);
+        result.ShouldBe("Hello World");
     }
 
     [Fact]
@@ -450,7 +451,7 @@ Josie";
     {
         const string tmpl = "Missing: {{ .MaybeNil.Field }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
-        Assert.Equal("Missing: ", result);
+        result.ShouldBe("Missing: ");
     }
 
     [Fact]
@@ -458,7 +459,7 @@ Josie";
     {
         const string tmpl = "A {{-/* c */-}} B";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
-        Assert.Equal("AB", result);
+        result.ShouldBe("AB");
     }
 
     [Fact]
@@ -476,7 +477,7 @@ Josie";
             ["User"] = new User { Name = "Alice", IsActive = true }
         });
 
-		        Assert.Equal("Active user: Alice", result);
+		        result.ShouldBe("Active user: Alice");
     }
 
     [Fact]
@@ -491,7 +492,7 @@ Josie";
             ["Count"] = 2
         });
 
-	        Assert.Equal("Status is active and count is positive", result);
+	        result.ShouldBe("Status is active and count is positive");
     }
 
     [Fact]
@@ -506,13 +507,13 @@ Josie";
         {
             ["Count"] = 3
         });
-        Assert.Equal("Count: 3", result1);
+        result1.ShouldBe("Count: 3");
 
         var result2 = TemplateEngine.Process(tmpl, new Dictionary<string, object>
         {
             ["Count"] = 0
         });
-        Assert.Equal("No items", result2);
+        result2.ShouldBe("No items");
     }
 
     [Fact]
@@ -523,6 +524,6 @@ Josie";
         {
             ["Name"] = "Alice"
         });
-        Assert.Equal("Name: alice", result);
+        result.ShouldBe("Name: alice");
     }
 }
