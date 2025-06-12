@@ -6,8 +6,13 @@ on:
     paths-ignore:
       - '**/*.md'
       - '**/*.gitignore'
+      - '**/*.txt'
   pull_request:
     branches: [ "main" ]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.gitignore'
+      - '**/*.txt'
 
 jobs:
   build:
