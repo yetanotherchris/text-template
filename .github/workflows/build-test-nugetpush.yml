@@ -37,11 +37,11 @@ jobs:
         run: |
           export PACKAGE_VERSION="$VERSION_NUMBER.$GITHUB_RUN_NUMBER-pr-$PR_NUMBER"
           dotnet pack src/TextTemplate/TextTemplate.csproj -c Release /p:PackageVersion=$PACKAGE_VERSION
-          dotnet nuget push "src/TextTemplate/bin/Release/TextTemplate.$PACKAGE_VERSION.nupkg" --api-key "$NUGET_KEY" --source https://api.nuget.org/v3/index.json
+          dotnet nuget push "src/TextTemplate/bin/Release/text-template.$PACKAGE_VERSION.nupkg" --api-key "$NUGET_KEY" --source https://api.nuget.org/v3/index.json
 
       - name: Nuget - push main package
         if: github.event_name != 'pull_request' && github.actor == github.repository_owner
         run: |
           export PACKAGE_VERSION="$VERSION_NUMBER.$GITHUB_RUN_NUMBER"
           dotnet pack src/TextTemplate/TextTemplate.csproj -c Release /p:PackageVersion=$PACKAGE_VERSION
-          dotnet nuget push "src/TextTemplate/bin/Release/TextTemplate.$PACKAGE_VERSION.nupkg" --api-key "$NUGET_KEY" --source https://api.nuget.org/v3/index.json
+          dotnet nuget push "src/TextTemplate/bin/Release/text-template.$PACKAGE_VERSION.nupkg" --api-key "$NUGET_KEY" --source https://api.nuget.org/v3/index.json
