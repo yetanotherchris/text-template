@@ -175,6 +175,22 @@ Josie";
     }
 
     [Fact]
+    public void AntlrTemplate_MultiArgumentLogic()
+    {
+        const string tmpl = "{{ if and .A .B .C }}and{{ else }}none{{ end }} {{ if or .X .Y .Z }}or{{ else }}no{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["A"] = true,
+            ["B"] = true,
+            ["C"] = true,
+            ["X"] = false,
+            ["Y"] = false,
+            ["Z"] = true
+        });
+        Assert.Equal("and or", result);
+    }
+
+    [Fact]
     public void AntlrTemplate_ExistenceCheck()
     {
         const string tmpl = "{{ if .User }}Yes{{ else }}No{{ end }}";
