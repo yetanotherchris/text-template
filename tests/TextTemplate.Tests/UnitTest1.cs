@@ -306,6 +306,74 @@ Josie";
     }
 
     [Fact]
+    public void AntlrTemplate_RangeElseIndentation()
+    {
+        const string tmpl = @"{{ range item := .Items }}
+  Item: {{ item }}
+{{ else }}
+  No items found
+{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = Array.Empty<string>()
+        });
+        const string expected = "\n  No items found\n";
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_NestedLoops()
+    {
+        const string tmpl = @"{{ range .Categories }}
+  Category: {{ .Name }}
+  {{ range .Items }}
+    - {{ .Title }}
+  {{ end }}
+{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Categories"] = new[]
+            {
+                new Dictionary<string, object>
+                {
+                    ["Name"] = "CatA",
+                    ["Items"] = new[]
+                    {
+                        new Dictionary<string, object> { ["Title"] = "A1" },
+                        new Dictionary<string, object> { ["Title"] = "A2" }
+                    }
+                },
+                new Dictionary<string, object>
+                {
+                    ["Name"] = "CatB",
+                    ["Items"] = new[]
+                    {
+                        new Dictionary<string, object> { ["Title"] = "B1" }
+                    }
+                }
+            }
+        });
+        const string expected = "\n  Category: CatA\n  \n    - A1\n  \n    - A2\n  \n\n  Category: CatB\n  \n    - B1\n  \n";
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_RangeIndexEmptySlice()
+    {
+        const string tmpl = @"{{ range i, item := .EmptySlice }}
+  Never executed
+{{ else }}
+  Empty slice message
+{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["EmptySlice"] = Array.Empty<int>()
+        });
+        const string expected = "\n  Empty slice message\n";
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
     public void AntlrTemplate_BasicComment()
     {
         const string tmpl = "Hello {{/* ignore */}}World";
