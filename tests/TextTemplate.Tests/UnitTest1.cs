@@ -253,12 +253,60 @@ Josie";
     [Fact]
     public void AntlrTemplate_WhitespaceControl()
     {
-        const string tmpl = "A  {{- .Name -}}  B";
+        const string tmpl = "A  {{- .Name -}}  B"; 
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
         {
             ["Name"] = "X"
         });
         Assert.Equal("AXB", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_TrimLeadingWhitespace()
+    {
+        const string tmpl = "  {{- .Field }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Field"] = "X"
+        });
+        Assert.Equal("X", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_TrimTrailingWhitespace()
+    {
+        const string tmpl = "{{ .Field -}}  ";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Field"] = "X"
+        });
+        Assert.Equal("X", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_TrimBothWhitespace()
+    {
+        const string tmpl = "  {{- .Field -}}  ";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Field"] = "X"
+        });
+        Assert.Equal("X", result);
+    }
+
+    [Fact]
+    public void AntlrTemplate_WhitespaceControlInLoop()
+    {
+        const string tmpl = "{{ range .Items -}}\n{{- .Name }}\n{{- end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new[]
+            {
+                new Dictionary<string, object> { ["Name"] = "A" },
+                new Dictionary<string, object> { ["Name"] = "B" }
+            }
+        });
+        Assert.Equal("AB", result);
     }
 
     [Fact]
