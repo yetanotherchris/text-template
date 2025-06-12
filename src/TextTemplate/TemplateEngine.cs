@@ -1,7 +1,10 @@
 using System.Collections.Generic;
 using System.Collections;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Text.Encodings.Web;
+using System.Net;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
@@ -112,9 +115,20 @@ public static class TemplateEngine
     private class ReplacementVisitor : GoTextTemplateParserBaseVisitor<string>
     {
         private readonly IDictionary<string, object> _data;
-        private static readonly Dictionary<string, Func<object?, object?>> PipelineFuncs = new()
+        private static readonly Dictionary<string, Func<object?[], object?>> PipelineFuncs = new()
         {
-            ["lower"] = v => v?.ToString()?.ToLowerInvariant()
+            ["lower"] = args => args.Length > 0 ? args[0]?.ToString()?.ToLowerInvariant() : null,
+            ["print"] = args => string.Concat(args.Select(a => a?.ToString())),
+            ["printf"] = args =>
+            {
+                if (args.Length == 0) return string.Empty;
+                string fmt = args[0]?.ToString() ?? string.Empty;
+                var rest = args.Skip(1).ToArray();
+                return SprintfFormatter.Format(fmt, rest);
+            },
+            ["html"] = args => System.Net.WebUtility.HtmlEncode(string.Concat(args.Select(a => a?.ToString()))),
+            ["js"] = args => System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(string.Concat(args.Select(a => a?.ToString()))),
+            ["urlquery"] = args => Uri.EscapeDataString(string.Concat(args.Select(a => a?.ToString())))
         };
 
         public ReplacementVisitor(IDictionary<string, object> data)
@@ -155,13 +169,15 @@ public static class TemplateEngine
 
         public override string VisitPlaceholder(GoTextTemplateParser.PlaceholderContext context)
         {
-            var pipeline = context.pipeline();
-            object? value = ResolvePath(pipeline.path());
-            foreach (var fn in pipeline.IDENT())
+            var commands = context.pipeline().command();
+            object? result = null;
+            bool first = true;
+            foreach (var cmd in commands)
             {
-                value = ApplyPipelineFunction(fn.GetText(), value);
+                result = ExecuteCommand(cmd, first ? null : result);
+                first = false;
             }
-            return value?.ToString() ?? string.Empty;
+            return result?.ToString() ?? string.Empty;
         }
 
         public override string VisitIfBlock(GoTextTemplateParser.IfBlockContext context)
@@ -400,11 +416,65 @@ public static class TemplateEngine
             return null;
         }
 
-        private object? ApplyPipelineFunction(string name, object? input)
+        private object? ApplyPipelineFunction(string name, params object?[] args)
         {
             if (PipelineFuncs.TryGetValue(name, out var fn))
-                return fn(input);
+                return fn(args);
+            return args.Length > 0 ? args[0] : null;
+        }
+
+        private object? ExecuteCommand(GoTextTemplateParser.CommandContext context, object? input)
+        {
+            if (context.path() != null && context.IDENT() == null)
+            {
+                string text = context.path().GetText();
+                if (input != null && PipelineFuncs.ContainsKey(text))
+                {
+                    return ApplyPipelineFunction(text, input);
+                }
+                return ResolvePath(context.path());
+            }
+
+            if (context.IDENT() != null)
+            {
+                string name = context.IDENT().GetText();
+                var args = new List<object?>();
+                if (input != null)
+                    args.Add(input);
+                foreach (var a in context.argument())
+                    args.Add(EvaluateArgument(a));
+                return ApplyPipelineFunction(name, args.ToArray());
+            }
+
             return input;
+        }
+
+        private object? EvaluateArgument(GoTextTemplateParser.ArgumentContext context)
+        {
+            if (context.path() != null)
+                return ResolvePath(context.path());
+
+            if (context.NUMBER() != null)
+            {
+                if (int.TryParse(context.NUMBER().GetText(), out int i))
+                    return i;
+                return context.NUMBER().GetText();
+            }
+
+            if (context.STRING() != null)
+            {
+                string s = context.STRING().GetText();
+                s = s.Substring(1, s.Length - 2);
+                s = Regex.Unescape(s);
+                return s;
+            }
+
+            if (context.BOOLEAN() != null)
+            {
+                return bool.Parse(context.BOOLEAN().GetText());
+            }
+
+            return null;
         }
 
         private sealed class PathReference

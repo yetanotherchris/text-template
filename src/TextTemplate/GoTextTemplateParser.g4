@@ -8,7 +8,19 @@ part     : TEXT | placeholder | ifBlock | forBlock | rangeBlock;
 placeholder : open pipeline close;
 
 pipeline
-    : path (PIPE IDENT)*
+    : command (PIPE command)*
+    ;
+
+command
+    : path
+    | IDENT argument*
+    ;
+
+argument
+    : path
+    | NUMBER
+    | STRING
+    | BOOLEAN
     ;
 
 path : IDENT | PATH;

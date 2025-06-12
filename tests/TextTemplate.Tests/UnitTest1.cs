@@ -526,4 +526,60 @@ Josie";
         });
         result.ShouldBe("Name: alice");
     }
+
+    [Fact]
+    public void AntlrTemplate_PipelinePrint()
+    {
+        const string tmpl = "{{ print .A .B }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["A"] = "hello",
+            ["B"] = "world"
+        });
+        result.ShouldBe("helloworld");
+    }
+
+    [Fact]
+    public void AntlrTemplate_PipelinePrintf()
+    {
+        const string tmpl = "{{ printf \"Hi %s\" .Name }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Name"] = "Bob"
+        });
+        result.ShouldBe("Hi Bob");
+    }
+
+    [Fact]
+    public void AntlrTemplate_PipelineHtml()
+    {
+        const string tmpl = "{{ .Txt | html }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Txt"] = "<b>bold</b>"
+        });
+        result.ShouldBe("&lt;b&gt;bold&lt;/b&gt;");
+    }
+
+    [Fact]
+    public void AntlrTemplate_PipelineJs()
+    {
+        const string tmpl = "{{ .Txt | js }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Txt"] = "var x = 1 && 2;"
+        });
+        result.ShouldBe("var x = 1 \\u0026\\u0026 2;");
+    }
+
+    [Fact]
+    public void AntlrTemplate_PipelineUrlQuery()
+    {
+        const string tmpl = "{{ .Txt | urlquery }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Txt"] = "a b&c"
+        });
+        result.ShouldBe("a%20b%26c");
+    }
 }
