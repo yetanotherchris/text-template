@@ -107,7 +107,7 @@ See the unit tests for more examples covering loops, conditionals and range
 expressions.
 
 ## Claude's suggestions
-<script src="https://gist.github.com/yetanotherchris/c80d0fadb5a2ee5b4beb0a4384020dbf.js"></script>
+https://gist.github.com/yetanotherchris/c80d0fadb5a2ee5b4beb0a4384020dbf.js
 
 ## License
 
