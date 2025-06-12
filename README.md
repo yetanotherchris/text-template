@@ -35,50 +35,82 @@ substitution, loops and conditionals.
 
 ### 1. Variable Interpolation
 
-- Access properties: `{{ .Property }}`
-- Nested property access: `{{ .User.Name }}`
-- Index arrays or slices: `{{ .Items[0] }}`
-- Access map entries: `{{ .Data.key }}`
-- Control whitespace: `{{- .Name -}}`
+#### Access properties
+`{{ .Property }}`
+
+#### Nested property access
+`{{ .User.Name }}`
+
+#### Index arrays or slices
+`{{ .Items[0] }}`
+
+#### Access map entries
+`{{ .Data.key }}`
+
+#### Control whitespace
+`{{- .Name -}}`
 
 ### 2. Conditional Statements
 
-- Basic `if` blocks: `{{ if condition }}...{{ end }}`
-- `if`/`else` blocks: `{{ if condition }}...{{ else }}...{{ end }}`
-- `else if` chains: `{{ if condition }}...{{ else if other }}...{{ end }}`
-- Supported conditions include:
-  - Boolean properties: `{{ if .IsActive }}`
-  - Comparisons: `{{ if eq .Status "active" }}`
-  - Existence checks: `{{ if .User }}`
+#### Basic `if` blocks
+`{{ if condition }}...{{ end }}`
+
+#### `if`/`else` blocks
+`{{ if condition }}...{{ else }}...{{ end }}`
+
+#### `else if` chains
+`{{ if condition }}...{{ else if other }}...{{ end }}`
+
+#### Supported conditions include
+- `{{ if .IsActive }}`
+- `{{ if eq .Status "active" }}`
+- `{{ if .User }}`
 
 ### 3. Loop Statements
 
-- Iterate slices or arrays: `{{ range .Items }}...{{ end }}`
-- Capture index/value: `{{ range $i, $v := .Items }}...{{ end }}`
-- Iterate maps: `{{ range .Map }}...{{ end }}`
-- Map key/value variables: `{{ range $k, $v := .Map }}...{{ end }}`
-- Handle empty collections: `{{ range .Items }}...{{ else }}...{{ end }}`
+#### Iterate slices or arrays
+`{{ range .Items }}...{{ end }}`
+
+#### Capture index/value
+`{{ range $i, $v := .Items }}...{{ end }}`
+
+#### Iterate maps
+`{{ range .Map }}...{{ end }}`
+
+#### Map key/value variables
+`{{ range $k, $v := .Map }}...{{ end }}`
+
+#### Handle empty collections
+`{{ range .Items }}...{{ else }}...{{ end }}`
 
 ### 4. Built-in Functions
 
-- Equality: `eq`, inequality: `ne`
-- Numeric comparisons: `lt`, `le`, `gt`, `ge`
-- Logical operators: `and`, `or`, `not`
+#### Equality and inequality
+`eq`, `ne`
+
+#### Numeric comparisons
+`lt`, `le`, `gt`, `ge`
+
+#### Logical operators
+`and`, `or`, `not`
 
 ### 5. Comments
 
-- Use `{{/* comment */}}` to embed comments in templates
+#### Embedding comments
+`{{/* comment */}}`
 
 ### 6. Pipelines
 
-- Chain functions with `|`, e.g. `{{ .Name | lower }}`
-- Available pipeline helpers include:
-  - `lower` - convert to lowercase
-  - `print` - concatenate values using default formatting
-  - `printf` - printf-style formatting using `SprintfFormatter`
-  - `html` - HTML escape the value
-  - `js` - JavaScript escape the value
-  - `urlquery` - escape for URL query parameters
+#### Chaining functions with `|`
+`{{ .Name | lower }}`
+
+#### Available pipeline helpers include
+- `lower` - convert to lowercase
+- `print` - concatenate values using default formatting
+- `printf` - printf-style formatting using `SprintfFormatter`
+- `html` - HTML escape the value
+- `js` - JavaScript escape the value
+- `urlquery` - escape for URL query parameters
 
 ## Not Implemented Yet
 
