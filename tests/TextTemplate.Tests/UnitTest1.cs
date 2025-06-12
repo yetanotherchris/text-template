@@ -496,6 +496,17 @@ Josie";
         {
             ["Count"] = 0
         });
-	        Assert.Equal("No items", result2);
+        Assert.Equal("No items", result2);
+    }
+
+    [Fact]
+    public void AntlrTemplate_PipelineLower()
+    {
+        const string tmpl = "Name: {{ .Name | lower }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Name"] = "Alice"
+        });
+        Assert.Equal("Name: alice", result);
     }
 }
