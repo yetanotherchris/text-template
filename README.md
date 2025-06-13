@@ -132,31 +132,52 @@ Console.WriteLine(result); // Hello World!
 ### Example Template
 
 ```csharp
-string letter = @"Dear {{ .Name }}
+// Define a named template using conditionals and a range loop
+string tmpl = @"
+{{ define \"letter\" }}
+Dear {{ .Name }},
 {{ if .Attended }}
 It was a pleasure to see you.
 {{ else }}
 Sorry you couldn't make it.
 {{ end }}
-You brought: {{ for item in Items }}{{ item }},{{ end }}
-Thank you for the lovely {{ .Gift }}.";
+You brought:
+{{ range .Items }}- {{ . }}
+{{ end }}
+Thank you for the lovely {{ .Gift }}.
+{{ end }}
+{{ template \"letter\" . }}";
 
-var output = TemplateEngine.Process(letter, new
+// Execute the template with a model
+var output = TemplateEngine.Process(tmpl, new
 {
     Name = "Bob",
     Gift = "toaster",
     Attended = false,
     Items = new[] { "book", "pen" }
 });
+
+// Example output:
+// Dear Bob,
+// Sorry you couldn't make it.
+// You brought:
+// - book
+// - pen
+// Thank you for the lovely toaster.
 Console.WriteLine(output);
 ```
 
 ### Template Definitions
 
 ```csharp
-string tmpl = "{{define \"user\"}}Name: {{.Name}}, Age: {{.Age}}{{end}}{{template \"user\" .}}";
+string tmpl = @"
+{{ define \"user\" }}
+Name: {{ .Name }}
+Age: {{ .Age }}
+{{ end }}
+{{ template \"user\" . }}";
 var userResult = TemplateEngine.Process(tmpl, new { Name = "Jane", Age = 42 });
-// userResult == "Name: Jane, Age: 42"
+// userResult == "Name: Jane\nAge: 42\n"
 ```
 
 ### Calling Functions with `call`
