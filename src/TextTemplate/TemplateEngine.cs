@@ -744,6 +744,26 @@ public static class TemplateEngine
                 return ApplyPipelineFunction(name, args.ToArray());
             }
 
+            if (context.STRING() != null)
+            {
+                string s = context.STRING().GetText();
+                s = s.Substring(1, s.Length - 2);
+                s = Regex.Unescape(s);
+                return s;
+            }
+
+            if (context.NUMBER() != null)
+            {
+                if (int.TryParse(context.NUMBER().GetText(), out int i))
+                    return i;
+                return context.NUMBER().GetText();
+            }
+
+            if (context.BOOLEAN() != null)
+            {
+                return bool.Parse(context.BOOLEAN().GetText());
+            }
+
             return input;
         }
 
