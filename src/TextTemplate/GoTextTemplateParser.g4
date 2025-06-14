@@ -16,12 +16,15 @@ part     : TEXT
 placeholder : open pipeline close;
 
 pipeline
-    : command (PIPE command)*
+    : (varList (ASSIGN | COLONEQ))? command (PIPE command)*
     ;
 
 command
     : path
     | IDENT argument*
+    | NUMBER
+    | STRING
+    | BOOLEAN
     ;
 
 argument

@@ -670,4 +670,23 @@ Josie";
         });
         result.ShouldBe("- a root;- b root;");
     }
+
+    [Fact]
+    public void Variable_Assignment_And_Usage()
+    {
+        const string tmpl = "{{ $greeting := \"Hi there\" }}{{ $greeting }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
+        result.ShouldBe("Hi there");
+    }
+
+    [Fact]
+    public void Range_With_DollarVariables()
+    {
+        const string tmpl = "{{ range $index, $item := .Items }}{{ $index }}: {{ $item }};{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new[] { "a", "b" }
+        });
+        result.ShouldBe("0: a;1: b;");
+    }
 }
