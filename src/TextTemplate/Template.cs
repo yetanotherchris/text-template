@@ -70,4 +70,12 @@ public class Template
         return TemplateEngine.Process(_templateString, model);
     }
 
+    /// <summary>
+    /// Registers a global function callable from templates using <c>call</c>.
+    /// </summary>
+    public static void RegisterFunction(string name, Delegate function)
+    {
+        TemplateEngine.RegisterFunction(name, function);
+    }
+
 }

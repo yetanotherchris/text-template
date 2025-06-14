@@ -14,7 +14,7 @@ namespace TextTemplate;
 /// Simple template processor that uses a small ANTLR grammar
 /// to replace {{variable}} tokens and evaluate {{if}} blocks.
 /// </summary>
-public static class TemplateEngine
+internal static class TemplateEngine
 {
     /// <summary>
     /// Processes <paramref name="templateString"/> by substituting tokens with values

@@ -11,7 +11,7 @@ The original Go package can be found here:
 - https://pkg.go.dev/text/template#pkg-overview
 - https://cs.opensource.google/go/go/+/refs/tags/go1.24.4:src/text/template/template.go
 
-This library now contains virtually all functionality from the original Go text/template package. The `TemplateEngine.Process` helper reads templates using the ANTLR-generated `GoTemplateLexer` and `GoTemplateParser` and performs variable substitution, loops and conditionals.
+This library now contains virtually all functionality from the original Go text/template package. Parse templates with `Template.New("name").Parse(text)` and execute them with `Execute` to perform variable substitution, loops and conditionals. Internally the engine uses an ANTLR-generated lexer and parser.
 
 ## Features
 
@@ -96,8 +96,8 @@ This library now contains virtually all functionality from the original Go text/
 {{ call "Add" 1 2 }}
 
 const string template = "{{ call \"Add\" 1 2 }}";
-TemplateEngine.RegisterFunction("Add", new Func<int, int, int>((a, b) => a + b));
-var result = TemplateEngine.Process(template, new {});
+Template.RegisterFunction("Add", new Func<int, int, int>((a, b) => a + b));
+var result = Template.New("calc").Parse(template).Execute(new {});
 // result == "3"
 
 // -- 5. Comments
@@ -129,8 +129,8 @@ var result = TemplateEngine.Process(template, new {});
 ## Usage
 
 ```csharp
-var tmpl = "Hello {{ .Name }}!";
-var result = TemplateEngine.Process(tmpl, new { Name = "World" });
+var tmpl = Template.New("hello").Parse("Hello {{ .Name }}!");
+var result = tmpl.Execute(new { Name = "World" });
 Console.WriteLine(result); // Hello World!
 ```
 
@@ -154,7 +154,7 @@ Thank you for the lovely {{ .Gift }}.
 {{ template \"letter\" . }}";
 
 // Execute the template with a model
-var output = TemplateEngine.Process(tmpl, new
+var output = Template.New("letter").Parse(tmpl).Execute(new
 {
     Name = "Bob",
     Gift = "toaster",
@@ -181,16 +181,16 @@ Name: {{ .Name }}
 Age: {{ .Age }}
 {{ end }}
 {{ template \"user\" . }}";
-var userResult = TemplateEngine.Process(tmpl, new { Name = "Jane", Age = 42 });
+var userResult = Template.New("user").Parse(tmpl).Execute(new { Name = "Jane", Age = 42 });
 // userResult == "Name: Jane\nAge: 42\n"
 ```
 
 ### Calling Functions with `call`
 
 ```csharp
-TemplateEngine.RegisterFunction("Add", new Func<int, int, int>((a, b) => a + b));
+Template.RegisterFunction("Add", new Func<int, int, int>((a, b) => a + b));
 string callTmpl = "{{ call \"Add\" 2 3 }}";
-string callResult = TemplateEngine.Process(callTmpl, new {});
+string callResult = Template.New("calc").Parse(callTmpl).Execute(new {});
 // callResult == "5"
 ```
 See the unit tests for more examples covering loops, conditionals and range expressions. The `YmlTemplateFileTest` shows how to render a full Kubernetes manifest from `tests/TestData/template.yml` with the expected output in `tests/TestData/expected.yml`.

@@ -23,6 +23,12 @@
     <PackageReference Include="Antlr4.Runtime.Standard" Version="4.9.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>TextTemplate.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
 
 
 </Project>
