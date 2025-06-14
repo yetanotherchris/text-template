@@ -22,6 +22,7 @@ This library now contains virtually all functionality from the original Go text/
 - Built-in functions: `eq`, `ne`, numeric comparisons (`lt`, `le`, `gt`, `ge`),
   logical operators (`and`, `or`, `not`) supporting multiple arguments.
 - Basic pipelines with the `lower` function for transforming output, and `call` to invoke registered functions.
+- Declare variables with `{{ $name := value }}` and reference them later using `$name`.
 - Access nested properties, map keys and indexes, including dynamic indexing via
   variables.
 - Whitespace trimming with `{{-` and `-}}` and comment syntax `{{/* ... */}}`.
@@ -45,6 +46,8 @@ This library now contains virtually all functionality from the original Go text/
 
 // Control whitespace
 {{- .Name -}}
+// Declare and use a variable
+{{ $name := "Hi there" }}{{ $name }}
 
 // -- 2. Conditional Statements
 // Basic if blocks
@@ -67,6 +70,8 @@ This library now contains virtually all functionality from the original Go text/
 
 // Capture index/value
 {{ range $i, $v := .Items }}...{{ end }}
+// Range with index/item variables
+{{ range $index, $item := .Items }}{{ $index }}: {{ $item }}{{ end }}
 
 // Iterate maps
 {{ range .Map }}...{{ end }}
