@@ -647,4 +647,27 @@ Josie";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
         result.ShouldBe("5");
     }
+
+    [Fact]
+    public void DotNotation_VariableFormsEquivalent()
+    {
+        const string tmpl = "{{ Variable }}|{{ .Variable }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Variable"] = "X"
+        });
+        result.ShouldBe("X|X");
+    }
+
+    [Fact]
+    public void Range_DotAndRootAccess()
+    {
+        const string tmpl = "{{ range .Items }}- {{ . }} {{ $.Answer }};{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new[] { "a", "b" },
+            ["Answer"] = "root"
+        });
+        result.ShouldBe("- a root;- b root;");
+    }
 }
