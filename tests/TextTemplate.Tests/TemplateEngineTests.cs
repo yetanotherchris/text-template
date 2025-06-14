@@ -670,4 +670,31 @@ Josie";
         });
         result.ShouldBe("- a root;- b root;");
     }
+
+    [Fact]
+    public void VariableDeclaration()
+    {
+        const string tmpl = "{{ $g := \"Hi\" }}{{ $g }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
+        result.ShouldBe("Hi");
+    }
+
+    [Fact]
+    public void VariableReassignment()
+    {
+        const string tmpl = "{{ $g := \"Hi\" }}{{ $g = \"Bye\" }}{{ $g }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
+        result.ShouldBe("Bye");
+    }
+
+    [Fact]
+    public void RangeLoopWithIndexAndValue()
+    {
+        const string tmpl = "{{ range $i, $v := .Items }}{{ $i }}: {{ $v }};{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new[] { "a", "b" }
+        });
+        result.ShouldBe("0: a;1: b;");
+    }
 }

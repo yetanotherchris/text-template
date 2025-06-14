@@ -22,6 +22,7 @@ public static class TemplateEngine
     /// </summary>
     public static string Process(string templateString, IDictionary<string, object> data)
     {
+        templateString = PreprocessAssignments(templateString);
         templateString = PreprocessWhitespace(templateString);
         templateString = PreprocessComments(templateString);
         AntlrInputStream inputStream = new(templateString);
@@ -78,6 +79,14 @@ public static class TemplateEngine
     private static string PreprocessComments(string template)
     {
         return Regex.Replace(template, "\\{\\{-?\\s*/\\*.*?\\*/\\s*-?\\}\\}", string.Empty, RegexOptions.Singleline);
+    }
+
+    private static string PreprocessAssignments(string template)
+    {
+        return Regex.Replace(template,
+            "\\{\\{\\s*\\$([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?::=|=)\\s*(.*?)\\s*\\}\\}",
+            m => $"{{{{ assign \"{m.Groups[1].Value}\" {m.Groups[2].Value} }}}}",
+            RegexOptions.Singleline);
     }
 
     private static IDictionary<string, object> ToDictionary(object model)
@@ -522,18 +531,35 @@ public static class TemplateEngine
             {
                 if (text == "$" || text == "$.")
                     return _rootCurrent;
-                text = text.StartsWith("$.") ? text.Substring(2) : text.Substring(1);
-                if (string.IsNullOrEmpty(text))
-                    return _rootCurrent;
-                var segmentsRoot = ParseSegments(text);
-                object? currentRoot = _rootData;
-                foreach (var seg in segmentsRoot)
+
+                if (text.StartsWith("$."))
                 {
-                    if (currentRoot == null)
-                        return null;
-                    currentRoot = ResolveSegment(currentRoot, seg);
+                    text = text.Substring(2);
+                    if (string.IsNullOrEmpty(text))
+                        return _rootCurrent;
+                    var segs = ParseSegments(text);
+                    object? cur = _rootData;
+                    foreach (var seg in segs)
+                    {
+                        if (cur == null)
+                            return null;
+                        cur = ResolveSegment(cur, seg);
+                    }
+                    return cur;
                 }
-                return currentRoot;
+                else
+                {
+                    text = text.Substring(1);
+                    var segs = ParseSegments(text);
+                    object? cur = _data;
+                    foreach (var seg in segs)
+                    {
+                        if (cur == null)
+                            return null;
+                        cur = ResolveSegment(cur, seg);
+                    }
+                    return cur;
+                }
             }
 
             var segments = ParseSegments(text);
@@ -653,6 +679,17 @@ public static class TemplateEngine
 
         private object? ApplyPipelineFunction(string name, params object?[] args)
         {
+            if (name == "assign")
+            {
+                if (args.Length >= 2)
+                {
+                    string varName = args[0]?.ToString() ?? string.Empty;
+                    _data[varName] = args[1]!;
+                    return string.Empty;
+                }
+                return string.Empty;
+            }
+
             if (PipelineFuncs.TryGetValue(name, out var fn))
                 return fn(args);
             return args.Length > 0 ? args[0] : null;
