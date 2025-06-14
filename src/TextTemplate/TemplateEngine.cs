@@ -129,6 +129,9 @@ public static class TemplateEngine
     private class ReplacementVisitor : GoTextTemplateParserBaseVisitor<string>
     {
         private readonly IDictionary<string, object> _data;
+        private readonly IDictionary<string, object> _rootData;
+        private readonly object? _current;
+        private readonly object? _rootCurrent;
         private static readonly Dictionary<string, Func<object?[], object?>> PipelineFuncs = new()
         {
             ["lower"] = args => args.Length > 0 ? args[0]?.ToString()?.ToLowerInvariant() : null,
@@ -225,8 +228,16 @@ public static class TemplateEngine
         private readonly Dictionary<string, GoTextTemplateParser.ContentContext> _templates;
 
         public ReplacementVisitor(IDictionary<string, object> data, Dictionary<string, GoTextTemplateParser.ContentContext> templates)
+            : this(data, data, data, data, templates)
+        {
+        }
+
+        private ReplacementVisitor(IDictionary<string, object> data, IDictionary<string, object> rootData, object? current, object? rootCurrent, Dictionary<string, GoTextTemplateParser.ContentContext> templates)
         {
             _data = data;
+            _rootData = rootData;
+            _current = current;
+            _rootCurrent = rootCurrent;
             _templates = templates;
         }
 
@@ -319,7 +330,7 @@ public static class TemplateEngine
                 {
                     [itemName] = item!,
                 };
-                var v = new ReplacementVisitor(child, _templates);
+                var v = new ReplacementVisitor(child, _rootData, item!, _rootCurrent, _templates);
                 sb.Append(v.Visit(context.content()));
             }
 
@@ -369,7 +380,7 @@ public static class TemplateEngine
                     if (secondVar != null)
                         root[secondVar] = entry.Value!;
 
-                    var v = new ReplacementVisitor(root, _templates);
+                    var v = new ReplacementVisitor(root, _rootData, entry.Value!, _rootCurrent, _templates);
                     sb.Append(v.Visit(context.content()));
                 }
             }
@@ -396,7 +407,7 @@ public static class TemplateEngine
                         root[firstVar] = item!;
                     }
 
-                    var v = new ReplacementVisitor(root, _templates);
+                    var v = new ReplacementVisitor(root, _rootData, item!, _rootCurrent, _templates);
                     sb.Append(v.Visit(context.content()));
                     index++;
                 }
@@ -421,7 +432,7 @@ public static class TemplateEngine
                     if (!root.ContainsKey(kv.Key))
                         root[kv.Key] = kv.Value;
 
-                var v = new ReplacementVisitor(root, _templates);
+                var v = new ReplacementVisitor(root, _rootData, value!, _rootCurrent, _templates);
                 return v.Visit(context.content());
             }
 
@@ -462,7 +473,8 @@ public static class TemplateEngine
                 if (!root.ContainsKey(kv.Key))
                     root[kv.Key] = kv.Value;
 
-            var v = new ReplacementVisitor(root, _templates);
+            object? newCurrent = ctxObj == _data ? _current : ctxObj;
+            var v = new ReplacementVisitor(root, _rootData, newCurrent, _rootCurrent, _templates);
             return v.Visit(tmpl);
         }
 
@@ -491,7 +503,7 @@ public static class TemplateEngine
                 if (!root.ContainsKey(kv.Key))
                     root[kv.Key] = kv.Value;
 
-            var v = new ReplacementVisitor(root, _templates);
+            var v = new ReplacementVisitor(root, _rootData, ctxObj, _rootCurrent, _templates);
             return v.Visit(tmpl);
         }
 
@@ -503,6 +515,27 @@ public static class TemplateEngine
 
         private object? ResolvePath(string text)
         {
+            if (text == ".")
+                return _current;
+
+            if (text.StartsWith("$"))
+            {
+                if (text == "$" || text == "$.")
+                    return _rootCurrent;
+                text = text.StartsWith("$.") ? text.Substring(2) : text.Substring(1);
+                if (string.IsNullOrEmpty(text))
+                    return _rootCurrent;
+                var segmentsRoot = ParseSegments(text);
+                object? currentRoot = _rootData;
+                foreach (var seg in segmentsRoot)
+                {
+                    if (currentRoot == null)
+                        return null;
+                    currentRoot = ResolveSegment(currentRoot, seg);
+                }
+                return currentRoot;
+            }
+
             var segments = ParseSegments(text);
             object? current = _data;
             foreach (var seg in segments)

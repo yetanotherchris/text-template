@@ -31,7 +31,9 @@ argument
     | BOOLEAN
     ;
 
-path : IDENT | PATH;
+path
+    : DOLLAR? (DOT | IDENT | PATH)
+    ;
 
 expr
     : path

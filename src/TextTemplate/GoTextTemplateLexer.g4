@@ -33,6 +33,7 @@ DEFINE  : 'define';
 TEMPLATE: 'template';
 BLOCK   : 'block';
 PIPE    : '|';
+DOT     : '.';
 PATH
     : ('.'? IDENT (('.' IDENT) | ('[' ~']'* ']'))+)
     | ('.' IDENT)

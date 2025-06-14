@@ -9,7 +9,7 @@ namespace TextTemplate.Tests;
 public class FullTemplateFromFileTests
 {
     [Fact]
-    public void AntlrTemplate_FileTemplate_AllFeatures()
+    public void FileTemplate_AllFeatures()
     {
         string baseDir = AppContext.BaseDirectory;
         string templatePath = Path.Combine(baseDir, "TestData", "full_template.txt");

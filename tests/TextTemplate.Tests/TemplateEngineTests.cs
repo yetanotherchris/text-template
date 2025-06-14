@@ -19,7 +19,7 @@ public class User
     public bool IsActive { get; set; }
 }
 
-public class UnitTest1
+public class TemplateEngineTests
 {
 
     [Fact]
@@ -43,7 +43,7 @@ public class UnitTest1
     }
 
     [Fact]
-    public void AntlrTemplate_ReplacesMultipleVariables()
+    public void ReplacesMultipleVariables()
     {
         const string text = "Hello {{.Name}}, you brought a {{.Gift}}.";
         var result = TemplateEngine.Process(text, new Dictionary<string, object>
@@ -55,7 +55,7 @@ public class UnitTest1
     }
 
     [Fact]
-    public void AntlrTemplate_ReplacesVariablesInLetter()
+    public void ReplacesVariablesInLetter()
     {
         const string letter = @"Dear {{ .Name }},
 {{ if .Attended }}
@@ -84,7 +84,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_HandlesForLoop()
+    public void HandlesForLoop()
     {
         const string tmpl = "Numbers: {{ for n in Items }}{{ n }},{{ end }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -95,7 +95,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_NestedField()
+    public void NestedField()
     {
         const string tmpl = "User: {{ .User.Name }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -106,7 +106,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_ElseIfBlock()
+    public void ElseIfBlock()
     {
         const string tmpl = "{{ if .A }}A{{ else if .B }}B{{ else }}C{{ end }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -118,7 +118,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_EqualityCondition()
+    public void EqualityCondition()
     {
         const string tmpl = "{{ if eq .Status \"active\" }}OK{{ else }}NO{{ end }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -129,7 +129,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_NotEqualCondition()
+    public void NotEqualCondition()
     {
         const string tmpl = "{{ if ne .Count 0 }}non-zero{{ else }}zero{{ end }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -140,7 +140,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_ComparisonOperators()
+    public void ComparisonOperators()
     {
         const string tmpl = "{{ if lt .A .B }}lt{{ end }}{{ if le .A .A }}le{{ end }}" +
             "{{ if gt .B .A }}gt{{ end }}{{ if ge .B .B }}ge{{ end }}";
@@ -153,7 +153,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_LogicalOperations()
+    public void LogicalOperations()
     {
         const string tmpl = "{{ if and .IsActive .IsValid }}ok{{ else }}bad{{ end }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -165,7 +165,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_LogicalNegation()
+    public void LogicalNegation()
     {
         const string tmpl = "{{ if not .Hidden }}show{{ else }}hide{{ end }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -176,7 +176,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_MultiArgumentLogic()
+    public void MultiArgumentLogic()
     {
         const string tmpl = "{{ if and .A .B .C }}and{{ else }}none{{ end }} {{ if or .X .Y .Z }}or{{ else }}no{{ end }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -192,7 +192,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_ExistenceCheck()
+    public void ExistenceCheck()
     {
         const string tmpl = "{{ if .User }}Yes{{ else }}No{{ end }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -203,7 +203,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_ForLoopElse()
+    public void ForLoopElse()
     {
         const string tmpl = "{{ for x in Items }}X{{ else }}Empty{{ end }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -223,7 +223,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_ArrayIndexing()
+    public void ArrayIndexing()
     {
         const string tmpl = "First: {{ .Items[0] }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -234,7 +234,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_ArrayIndexingVariable()
+    public void ArrayIndexingVariable()
     {
         const string tmpl = "Current: {{ .Items[.CurrentIndex] }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -246,7 +246,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_MapAccess()
+    public void MapAccess()
     {
         const string tmpl = "Value: {{ .Data.key }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -257,7 +257,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_MapAccessSpecialKey()
+    public void MapAccessSpecialKey()
     {
         const string tmpl = "Val: {{ .Data[\"key-with-dashes\"] }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -268,7 +268,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_WhitespaceControl()
+    public void WhitespaceControl()
     {
         const string tmpl = "A  {{- .Name -}}  B"; 
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -279,7 +279,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_TrimLeadingWhitespace()
+    public void TrimLeadingWhitespace()
     {
         const string tmpl = "  {{- .Field }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -290,7 +290,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_TrimTrailingWhitespace()
+    public void TrimTrailingWhitespace()
     {
         const string tmpl = "{{ .Field -}}  ";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -301,7 +301,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_TrimBothWhitespace()
+    public void TrimBothWhitespace()
     {
         const string tmpl = "  {{- .Field -}}  ";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -312,7 +312,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_WhitespaceControlInLoop()
+    public void WhitespaceControlInLoop()
     {
         const string tmpl = "{{ range .Items -}}\n{{- .Name }}\n{{- end }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -327,7 +327,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_RangeArray()
+    public void RangeArray()
     {
         const string tmpl = "{{ range v := .Items }}{{ v }};{{ end }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -338,7 +338,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_RangeArrayIndex()
+    public void RangeArrayIndex()
     {
         const string tmpl = "{{ range i, v := .Items }}{{ i }}={{ v }},{{ end }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -349,7 +349,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_RangeMapKeyValue()
+    public void RangeMapKeyValue()
     {
         const string tmpl = "{{ range k, v := .Data }}{{ k }}={{ v }},{{ end }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -360,7 +360,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_RangeElse()
+    public void RangeElse()
     {
         const string tmpl = "{{ range .Empty }}X{{ else }}Empty{{ end }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -371,7 +371,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_RangeElseIndentation()
+    public void RangeElseIndentation()
     {
         const string tmpl = @"{{ range item := .Items }}
   Item: {{ item }}
@@ -387,7 +387,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_NestedLoops()
+    public void NestedLoops()
     {
         const string tmpl = @"{{ range .Categories }}
   Category: {{ .Name }}
@@ -423,7 +423,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_RangeIndexEmptySlice()
+    public void RangeIndexEmptySlice()
     {
         const string tmpl = @"{{ range i, item := .EmptySlice }}
   Never executed
@@ -439,7 +439,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_BasicComment()
+    public void BasicComment()
     {
         const string tmpl = "Hello {{/* ignore */}}World";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
@@ -447,7 +447,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_MissingFieldAccess()
+    public void MissingFieldAccess()
     {
         const string tmpl = "Missing: {{ .MaybeNil.Field }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
@@ -455,7 +455,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_TrimmedComment()
+    public void TrimmedComment()
     {
         const string tmpl = "A {{-/* c */-}} B";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
@@ -463,7 +463,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_NestedConditions()
+    public void NestedConditions()
     {
         const string tmpl = @"{{- if .User -}}
 	{{- if .User.IsActive -}}
@@ -481,7 +481,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_ComplexBooleanExpression()
+    public void ComplexBooleanExpression()
     {
         const string tmpl = @"{{- if and (eq .Status ""active"") (gt .Count 0) -}}
 	Status is active and count is positive
@@ -496,7 +496,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_ZeroValueCheck()
+    public void ZeroValueCheck()
     {
         const string tmpl = @"{{- if .Count -}}
 	Count: {{ .Count }}
@@ -517,7 +517,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_PipelineLower()
+    public void PipelineLower()
     {
         const string tmpl = "Name: {{ .Name | lower }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -528,7 +528,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_PipelinePrint()
+    public void PipelinePrint()
     {
         const string tmpl = "{{ print .A .B }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -540,7 +540,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_PipelinePrintf()
+    public void PipelinePrintf()
     {
         const string tmpl = "{{ printf \"Hi %s\" .Name }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -551,7 +551,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_PipelineHtml()
+    public void PipelineHtml()
     {
         const string tmpl = "{{ .Txt | html }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -562,7 +562,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_PipelineJs()
+    public void PipelineJs()
     {
         const string tmpl = "{{ .Txt | js }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -573,7 +573,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_PipelineUrlQuery()
+    public void PipelineUrlQuery()
     {
         const string tmpl = "{{ .Txt | urlquery }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -584,7 +584,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_PipelineChainedLowerHtml()
+    public void PipelineChainedLowerHtml()
     {
         const string tmpl = "{{ .Name | lower | html }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -595,7 +595,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_PipelineChainedPrintLower()
+    public void PipelineChainedPrintLower()
     {
         const string tmpl = "{{ print .A .B | lower }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -607,7 +607,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_PipelineLen()
+    public void PipelineLen()
     {
         const string tmpl = "{{ len .Items }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -618,7 +618,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_PipelineIndex()
+    public void PipelineIndex()
     {
         const string tmpl = "{{ index .Items 1 }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -629,7 +629,7 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_PipelineSliceString()
+    public void PipelineSliceString()
     {
         const string tmpl = "{{ slice .Txt 1 4 }}";
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
@@ -640,11 +640,34 @@ Josie";
     }
 
     [Fact]
-    public void AntlrTemplate_PipelineCall()
+    public void PipelineCall()
     {
         const string tmpl = "{{ call \"Add\" 2 3 }}";
         TemplateEngine.RegisterFunction("Add", new Func<int, int, int>((a, b) => a + b));
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
         result.ShouldBe("5");
+    }
+
+    [Fact]
+    public void DotNotation_VariableFormsEquivalent()
+    {
+        const string tmpl = "{{ Variable }}|{{ .Variable }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Variable"] = "X"
+        });
+        result.ShouldBe("X|X");
+    }
+
+    [Fact]
+    public void Range_DotAndRootAccess()
+    {
+        const string tmpl = "{{ range .Items }}- {{ . }} {{ $.Answer }};{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new[] { "a", "b" },
+            ["Answer"] = "root"
+        });
+        result.ShouldBe("- a root;- b root;");
     }
 }
