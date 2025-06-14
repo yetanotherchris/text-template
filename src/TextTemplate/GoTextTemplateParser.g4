@@ -17,6 +17,7 @@ placeholder : open pipeline close;
 
 pipeline
     : command (PIPE command)*
+    | varList (COLONEQ | ASSIGN) pipeline
     ;
 
 command
@@ -32,7 +33,10 @@ argument
     ;
 
 path
-    : DOLLAR? (DOT | IDENT | PATH)
+    : IDENT
+    | PATH
+    | DOLLAR IDENT
+    | DOLLAR PATH
     ;
 
 expr
@@ -82,7 +86,7 @@ blockBlock
 
 rangeClause
     : path
-    | varList COLONEQ path
+    | varList COLONEQ pipeline
     ;
 
 varList
