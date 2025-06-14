@@ -132,6 +132,7 @@ public static class TemplateEngine
         private readonly IDictionary<string, object> _rootData;
         private readonly object? _current;
         private readonly object? _rootCurrent;
+        private bool _lastPipelineWasAssignment;
         private static readonly Dictionary<string, Func<object?[], object?>> PipelineFuncs = new()
         {
             ["lower"] = args => args.Length > 0 ? args[0]?.ToString()?.ToLowerInvariant() : null,
@@ -282,13 +283,11 @@ public static class TemplateEngine
 
         public override string VisitPlaceholder(GoTextTemplateParser.PlaceholderContext context)
         {
-            var commands = context.pipeline().command();
-            object? result = null;
-            bool first = true;
-            foreach (var cmd in commands)
+            object? result = EvaluatePipeline(context.pipeline());
+            if (_lastPipelineWasAssignment)
             {
-                result = ExecuteCommand(cmd, first ? null : result);
-                first = false;
+                _lastPipelineWasAssignment = false;
+                return string.Empty;
             }
             return result?.ToString() ?? string.Empty;
         }
@@ -342,7 +341,23 @@ public static class TemplateEngine
 
         public override string VisitRangeBlock(GoTextTemplateParser.RangeBlockContext context)
         {
-            var sourceObj = ResolvePath(context.rangeClause().path());
+            object? sourceObj;
+            var clause = context.rangeClause();
+            var rcType = clause.GetType();
+            object? pipelineObj = rcType.GetMethod("pipeline")?.Invoke(clause, null);
+            if (clause.varList() != null && pipelineObj is GoTextTemplateParser.PipelineContext pc)
+            {
+                sourceObj = EvaluatePipeline(pc);
+            }
+            else
+            {
+                var pathCtx = rcType.GetMethod("path")?.Invoke(clause, null) as GoTextTemplateParser.PathContext;
+                if (pathCtx != null)
+                    sourceObj = ResolvePath(pathCtx);
+                else
+                    sourceObj = null;
+            }
+
             if (sourceObj is not IEnumerable)
             {
                 if (context.elseBlock() != null)
@@ -520,31 +535,44 @@ public static class TemplateEngine
 
             if (text.StartsWith("$"))
             {
-                if (text == "$" || text == "$.")
-                    return _rootCurrent;
-                text = text.StartsWith("$.") ? text.Substring(2) : text.Substring(1);
-                if (string.IsNullOrEmpty(text))
-                    return _rootCurrent;
-                var segmentsRoot = ParseSegments(text);
-                object? currentRoot = _rootData;
-                foreach (var seg in segmentsRoot)
+                if (text == "$" || text.StartsWith("$."))
                 {
-                    if (currentRoot == null)
-                        return null;
-                    currentRoot = ResolveSegment(currentRoot, seg);
+                    string rootText = text.StartsWith("$.") ? text.Substring(2) : string.Empty;
+                    if (rootText.Length == 0)
+                        return _rootCurrent;
+                    var segRoot = ParseSegments(rootText);
+                    object? curRoot = _rootData;
+                    foreach (var seg in segRoot)
+                    {
+                        if (curRoot == null)
+                            return null;
+                        curRoot = ResolveSegment(curRoot, seg);
+                    }
+                    return curRoot;
                 }
-                return currentRoot;
+
+                var segmentsVar = ParseSegments(text);
+                if (segmentsVar.Count == 0 || segmentsVar[0] is not VariableName varSeg)
+                    return null;
+                _data.TryGetValue(varSeg.Name, out object? current);
+                for (int idx = 1; idx < segmentsVar.Count; idx++)
+                {
+                    if (current == null)
+                        return null;
+                    current = ResolveSegment(current, segmentsVar[idx]);
+                }
+                return current;
             }
 
             var segments = ParseSegments(text);
-            object? current = _data;
+            object? currentDefault = _data;
             foreach (var seg in segments)
             {
-                if (current == null)
+                if (currentDefault == null)
                     return null;
-                current = ResolveSegment(current, seg);
+                currentDefault = ResolveSegment(currentDefault, seg);
             }
-            return current;
+            return currentDefault;
         }
 
         private object? EvaluateExpr(GoTextTemplateParser.ExprContext context)
@@ -612,6 +640,22 @@ public static class TemplateEngine
 
         private object? EvaluatePipeline(GoTextTemplateParser.PipelineContext context)
         {
+            _lastPipelineWasAssignment = false;
+
+            // Use reflection to support optional var assignment fields
+            GoTextTemplateParser.VarListContext? varList = null;
+            bool isColoneq = false;
+            bool isAssign = false;
+            var type = context.GetType();
+            var varListMethod = type.GetMethod("varList");
+            if (varListMethod != null)
+                varList = varListMethod.Invoke(context, null) as GoTextTemplateParser.VarListContext;
+            if (varList != null)
+            {
+                isColoneq = type.GetMethod("COLONEQ")?.Invoke(context, null) != null;
+                isAssign = type.GetMethod("ASSIGN")?.Invoke(context, null) != null;
+            }
+
             var commands = context.command();
             object? result = null;
             bool first = true;
@@ -620,6 +664,25 @@ public static class TemplateEngine
                 result = ExecuteCommand(cmd, first ? null : result);
                 first = false;
             }
+
+            if (varList != null)
+            {
+                foreach (var v in varList.varName())
+                {
+                    string name = v.GetText().TrimStart('$');
+                    if (isAssign)
+                    {
+                        if (_data.ContainsKey(name))
+                            _data[name] = result!;
+                    }
+                    else // COLONEQ
+                    {
+                        _data[name] = result!;
+                    }
+                }
+                _lastPipelineWasAssignment = true;
+            }
+
             return result;
         }
 
@@ -718,11 +781,26 @@ public static class TemplateEngine
             public PathReference(string path) => Path = path;
         }
 
+        private sealed class VariableName
+        {
+            public string Name { get; }
+            public VariableName(string name) => Name = name;
+        }
+
         private static List<object> ParseSegments(string text)
         {
             var result = new List<object>();
             int i = 0;
-            if (text.StartsWith(".")) i++;
+            if (text.StartsWith("$") && text.Length > 1 && text[1] != '.')
+            {
+                i = 1;
+                int start = i;
+                while (i < text.Length && (char.IsLetterOrDigit(text[i]) || text[i] == '_')) i++;
+                var varName = text.Substring(start, i - start);
+                result.Add(new VariableName(varName));
+                if (i < text.Length && text[i] == '.') i++;
+            }
+            else if (text.StartsWith(".")) i++;
             while (i < text.Length)
             {
                 if (text[i] == '.')
