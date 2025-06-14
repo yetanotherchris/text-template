@@ -24,7 +24,7 @@ public static class TemplateEngine
     {
         templateString = PreprocessWhitespace(templateString);
         templateString = PreprocessComments(templateString);
-        AntlrInputStream inputStream = new(templateString);
+        var inputStream = new AntlrInputStream(templateString);
         var lexer = new GoTextTemplateLexer(inputStream);
         var tokens = new CommonTokenStream(lexer);
         var parser = new GoTextTemplateParser(tokens);
@@ -33,6 +33,21 @@ public static class TemplateEngine
         var templates = new Dictionary<string, GoTextTemplateParser.ContentContext>();
         var visitor = new ReplacementVisitor(data, templates);
         return visitor.Visit(tree);
+    }
+
+    /// <summary>
+    /// Parses <paramref name="templateString"/> to ensure it contains valid syntax.
+    /// </summary>
+    public static void Validate(string templateString)
+    {
+        if (templateString == null) throw new ArgumentNullException(nameof(templateString));
+        templateString = PreprocessWhitespace(templateString);
+        templateString = PreprocessComments(templateString);
+        var inputStream = new AntlrInputStream(templateString);
+        var lexer = new GoTextTemplateLexer(inputStream);
+        var tokens = new CommonTokenStream(lexer);
+        var parser = new GoTextTemplateParser(tokens);
+        parser.template();
     }
 
     /// <summary>
