@@ -14,6 +14,7 @@ FOR     : 'for';
 RANGE   : 'range';
 IN      : 'in';
 COLONEQ : ':=';
+ASSIGN : '=';
 COMMA   : ',';
 DOLLAR  : '$';
 NUMBER  : [0-9]+;
