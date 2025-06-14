@@ -27,6 +27,9 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
       <_Parameter1>TextTemplate.Tests</_Parameter1>
     </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>TextTemplate.Benchmarks</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 
 
