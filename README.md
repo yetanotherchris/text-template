@@ -195,6 +195,24 @@ string callResult = TemplateEngine.Process(callTmpl, new {});
 ```
 See the unit tests for more examples covering loops, conditionals and range expressions. The `YmlTemplateFileTest` shows how to render a full Kubernetes manifest from `tests/TestData/template.yml` with the expected output in `tests/TestData/expected.yml`.
 
+## Benchmark Results
+
+The following microbenchmarks were run using [BenchmarkDotNet](https://benchmarkdotnet.org/) on .NET 9.0. Each benchmark renders the same short template:
+
+```text
+Hello {{ .Name }}! {{ range .Items }}{{ . }} {{ end }}
+```
+
+The model contains five strings in the `Items` list so every engine performs a small loop. BenchmarkDotNet ran each test using its default configuration which executes a warm‑up phase followed by enough iterations (13–96 in our runs) to collect roughly one second of timing data. The Go implementation was benchmarked with `go test -bench .` using the equivalent template and data.
+
+| Method | Mean | Error | StdDev |
+|-------|------:|------:|------:|
+| GoTextTemplate (.NET) | 14.52 us | 0.18 us | 0.15 us |
+| Handlebars.Net | 1,857 us | 32 us | 29 us |
+| Scriban | 14.62 us | 0.29 us | 0.81 us |
+| DotLiquid | 13.79 us | 0.27 us | 0.28 us |
+| Go text/template | 1.69 us | 0.00 us | 0.00 us |
+
 ## Claude's suggestions
 https://gist.github.com/yetanotherchris/c80d0fadb5a2ee5b4beb0a4384020dbf.js
 
