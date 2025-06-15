@@ -15,6 +15,31 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\tests\TextTemplate.Tests\ComplexNestedTemplateData.cs" Link="ComplexNestedTemplateData.cs" />
+    <None Include="..\..\tests\TextTemplate.Tests\TestData\complex-template-data.yml" Link="TestData\complex-template-data.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\tests\TextTemplate.Tests\TestData\complex-template-deployment.yml" Link="TestData\complex-template-deployment.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\tests\TextTemplate.Tests\TestData\complex-template-service.yml" Link="TestData\complex-template-service.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\tests\TextTemplate.Tests\TestData\complex-template-ingress.yml" Link="TestData\complex-template-ingress.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData/complex-template.hbs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData/complex-template.scriban">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData/complex-template.liquid">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\TextTemplate\TextTemplate.csproj" />
   </ItemGroup>
 

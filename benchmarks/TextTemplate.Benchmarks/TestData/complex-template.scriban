@@ -1,0 +1,159 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ Values.appName }}-deployment
+  namespace: {{ Values.namespace }}
+  labels:
+    app: {{ Values.appName }}
+    version: {{ Values.version }}
+    {{ if Values.environment }}
+    environment: {{ Values.environment }}
+    {{ end }}
+    {{ for kv in Values.customLabels }}
+    {{ kv.key }}: {{ kv.value }}
+    {{ end }}
+spec:
+  replicas: {{ Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ Values.appName }}
+  template:
+    metadata:
+      labels:
+        app: {{ Values.appName }}
+        version: {{ Values.version }}
+    spec:
+      containers:
+      - name: {{ Values.appName }}
+        image: {{ Values.image.repository }}:{{ Values.image.tag }}
+        ports:
+        - containerPort: {{ Values.service.port }}
+        {{ if Values.env }}
+        env:
+        {{ for e in Values.env }}
+        - name: {{ e.name }}
+          value: "{{ e.value }}"
+        {{ end }}
+        {{ end }}
+        {{ if Values.resources }}
+        resources:
+          {{ if Values.resources.limits }}
+          limits:
+            {{ for kv in Values.resources.limits }}
+            {{ kv.key }}: {{ kv.value }}
+            {{ end }}
+          {{ end }}
+          {{ if Values.resources.requests }}
+          requests:
+            {{ for kv in Values.resources.requests }}
+            {{ kv.key }}: {{ kv.value }}
+            {{ end }}
+          {{ end }}
+        {{ end }}
+        {{ if Values.volumeMounts }}
+        volumeMounts:
+        {{ for m in Values.volumeMounts }}
+        - name: {{ m.name }}
+          mountPath: {{ m.mountPath }}
+          {{ if m.readOnly }}
+          readOnly: {{ m.readOnly }}
+          {{ end }}
+        {{ end }}
+        {{ end }}
+      {{ if Values.volumes }}
+      volumes:
+      {{ for v in Values.volumes }}
+      - name: {{ v.name }}
+        {{ if v.configMap }}
+        configMap:
+          name: {{ v.configMap.name }}
+        {{ end }}
+        {{ if v.secret }}
+        secret:
+          secretName: {{ v.secret.secretName }}
+        {{ end }}
+        {{ if v.persistentVolumeClaim }}
+        persistentVolumeClaim:
+          claimName: {{ v.persistentVolumeClaim.claimName }}
+        {{ end }}
+      {{ end }}
+      {{ end }}
+      {{ if Values.nodeSelector }}
+      nodeSelector:
+        {{ for kv in Values.nodeSelector }}
+        {{ kv.key }}: {{ kv.value }}
+        {{ end }}
+      {{ end }}
+      {{ if Values.tolerations }}
+      tolerations:
+      {{ for t in Values.tolerations }}
+      - key: {{ t.key }}
+        operator: {{ t.operator }}
+        {{ if t.value }}
+        value: {{ t.value }}
+        {{ end }}
+        effect: {{ t.effect }}
+      {{ end }}
+      {{ end }}
+---
+{{ if Values.service.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ Values.appName }}-service
+  namespace: {{ Values.namespace }}
+  labels:
+    app: {{ Values.appName }}
+spec:
+  type: {{ Values.service.type }}
+  ports:
+  - port: {{ Values.service.port }}
+    targetPort: {{ Values.service.targetPort }}
+    protocol: TCP
+    {{ if Values.service.nodePort }}
+    nodePort: {{ Values.service.nodePort }}
+    {{ end }}
+  selector:
+    app: {{ Values.appName }}
+{{ end }}
+---
+{{ if Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ Values.appName }}-ingress
+  namespace: {{ Values.namespace }}
+  {{ if Values.ingress.annotations }}
+  annotations:
+    {{ for kv in Values.ingress.annotations }}
+    {{ kv.key }}: "{{ kv.value }}"
+    {{ end }}
+  {{ end }}
+spec:
+  {{ if Values.ingress.tls }}
+  tls:
+  {{ for t in Values.ingress.tls }}
+  - hosts:
+    {{ for h in t.hosts }}
+    - {{ h }}
+    {{ end }}
+    secretName: {{ t.secretName }}
+  {{ end }}
+  {{ end }}
+  rules:
+  {{ for host in Values.ingress.hosts }}
+  - host: {{ host.host }}
+    http:
+      paths:
+      {{ for p in host.paths }}
+      - path: {{ p.path }}
+        pathType: {{ p.pathType }}
+        backend:
+          service:
+            name: {{ Values.appName }}-service
+            port:
+              number: {{ Values.service.port }}
+      {{ end }}
+  {{ end }}
+{{ end }}
+
