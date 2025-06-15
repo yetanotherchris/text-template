@@ -217,13 +217,18 @@ The model contains five strings in the `Items` list so every engine performs a s
 
 The benchmark suite also includes `ComplexNestedTemplateBenchmarks`. This test
 loads the Kubernetes-style YAML templates found under `tests/TestData` and
-executes them as a single nested template. Run all benchmarks with:
+executes them as a single nested template. Run the .NET benchmarks with:
 
 ```bash
 dotnet run -c Release --project benchmarks/TextTemplate.Benchmarks -- --filter "*"
 ```
 
-BenchmarkDotNet will then execute both the basic and advanced scenarios.
+BenchmarkDotNet will then execute both the basic and advanced scenarios. The Go
+implementation can be benchmarked separately with:
+
+```bash
+go test -bench BenchmarkGoComplexTemplate ./benchmarks/go -benchmem
+```
 
 Example results on a small container:
 
@@ -233,6 +238,7 @@ Example results on a small container:
 | Handlebars | 47,455.5 us | 79,242.45 us | 4,343.55 us |
 | Scriban | 202.1 us | 426.47 us | 23.38 us |
 | DotLiquid | 467.4 us | 86.21 us | 4.73 us |
+| Go text/template | 0.79 us | 0.00 us | 0.00 us |
 
 ## Claude's suggestions
 https://gist.github.com/yetanotherchris/c80d0fadb5a2ee5b4beb0a4384020dbf.js
