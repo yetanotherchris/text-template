@@ -162,6 +162,13 @@ internal static class TemplateEngine
             ["html"] = args => System.Net.WebUtility.HtmlEncode(string.Concat(args.Select(a => a?.ToString()))),
             ["js"] = args => System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(string.Concat(args.Select(a => a?.ToString()))),
             ["urlquery"] = args => Uri.EscapeDataString(string.Concat(args.Select(a => a?.ToString()))),
+            ["quote"] = args =>
+            {
+                if (args.Length == 0 || args[0] == null) return string.Empty;
+                var s = args[0]?.ToString() ?? string.Empty;
+                s = s.Replace("\"", "\\\"");
+                return $"\"{s}\"";
+            },
             ["len"] = args =>
             {
                 if (args.Length == 0 || args[0] == null) return 0;

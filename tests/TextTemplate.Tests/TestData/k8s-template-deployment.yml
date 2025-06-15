@@ -1,3 +1,4 @@
+{{define "deployment"}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -93,64 +94,4 @@ spec:
         effect: {{ .effect }}
       {{- end }}
       {{- end }}
----
-{{- if .Values.service.enabled }}
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Values.appName }}-service
-  namespace: {{ .Values.namespace | default "default" }}
-  labels:
-    app: {{ .Values.appName }}
-spec:
-  type: {{ .Values.service.type | default "ClusterIP" }}
-  ports:
-  - port: {{ .Values.service.port }}
-    targetPort: {{ .Values.service.targetPort | default .Values.service.port }}
-    protocol: TCP
-    {{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}
-    nodePort: {{ .Values.service.nodePort }}
-    {{- end }}
-  selector:
-    app: {{ .Values.appName }}
-{{- end }}
----
-{{- if .Values.ingress.enabled }}
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: {{ .Values.appName }}-ingress
-  namespace: {{ .Values.namespace | default "default" }}
-  {{- if .Values.ingress.annotations }}
-  annotations:
-    {{- range $key, $value := .Values.ingress.annotations }}
-    {{ $key }}: {{ $value | quote }}
-    {{- end }}
-  {{- end }}
-spec:
-  {{- if .Values.ingress.tls }}
-  tls:
-  {{- range .Values.ingress.tls }}
-  - hosts:
-    {{- range .hosts }}
-    - {{ . }}
-    {{- end }}
-    secretName: {{ .secretName }}
-  {{- end }}
-  {{- end }}
-  rules:
-  {{- range .Values.ingress.hosts }}
-  - host: {{ .host }}
-    http:
-      paths:
-      {{- range .paths }}
-      - path: {{ .path }}
-        pathType: {{ .pathType | default "Prefix" }}
-        backend:
-          service:
-            name: {{ $.Values.appName }}-service
-            port:
-              number: {{ $.Values.service.port }}
-      {{- end }}
-  {{- end }}
-{{- end }}
+{{end}}
