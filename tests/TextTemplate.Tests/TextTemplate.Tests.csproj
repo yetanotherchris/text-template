@@ -37,25 +37,25 @@
     <None Include="TestData\operations_expected.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\single-k8s-data.yml">
+    <None Include="TestData\single-complex-data.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\single-k8s-expected.yml">
+    <None Include="TestData\single-complex-expected.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\k8s-template-data.yml">
+    <None Include="TestData\complex-template-data.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\k8s-template-deployment.yml">
+    <None Include="TestData\complex-template-deployment.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\k8s-template-service.yml">
+    <None Include="TestData\complex-template-service.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\k8s-template-ingress.yml">
+    <None Include="TestData\complex-template-ingress.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="TestData\k8s-template-expected.yml">
+    <None Include="TestData\complex-template-expected.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="TestData\inheritance_template.txt">

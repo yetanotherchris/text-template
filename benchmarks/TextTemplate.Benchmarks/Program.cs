@@ -44,5 +44,8 @@ public class TemplateBenchmarks
 
 public class Program
 {
-    public static void Main(string[] args) => BenchmarkRunner.Run<TemplateBenchmarks>();
+    public static void Main(string[] args)
+    {
+        BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+    }
 }

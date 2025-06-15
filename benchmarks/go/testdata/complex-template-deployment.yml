@@ -37,19 +37,7 @@ spec:
         {{- end }}
         {{- end }}
         {{- if .Values.resources }}
-        resources:
-          {{- if .Values.resources.limits }}
-          limits:
-            {{- range $key, $value := .Values.resources.limits }}
-            {{ $key }}: {{ $value }}
-            {{- end }}
-          {{- end }}
-          {{- if .Values.resources.requests }}
-          requests:
-            {{- range $key, $value := .Values.resources.requests }}
-            {{ $key }}: {{ $value }}
-            {{- end }}
-          {{- end }}
+        {{template "resources" .}}
         {{- end }}
         {{- if .Values.volumeMounts }}
         volumeMounts:
@@ -94,4 +82,20 @@ spec:
         effect: {{ .effect }}
       {{- end }}
       {{- end }}
+{{end}}
+
+{{define "resources"}}
+        resources:
+          {{- if .Values.resources.limits }}
+          limits:
+            {{- range $key, $value := .Values.resources.limits }}
+            {{ $key }}: {{ $value }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.resources.requests }}
+          requests:
+            {{- range $key, $value := .Values.resources.requests }}
+            {{ $key }}: {{ $value }}
+            {{- end }}
+          {{- end }}
 {{end}}

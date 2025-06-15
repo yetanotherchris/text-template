@@ -213,6 +213,27 @@ The model contains five strings in the `Items` list so every engine performs a s
 | DotLiquid | 13.79 us | 0.27 us | 0.28 us |
 | Go text/template | 1.69 us | 0.00 us | 0.00 us |
 
+### Advanced Scenario Benchmarks
+
+The benchmark suite also includes `ComplexNestedTemplateBenchmarks`. This test
+loads the Kubernetes-style YAML templates found under `tests/TestData` and
+executes them as a single nested template. Run all benchmarks with:
+
+```bash
+dotnet run -c Release --project benchmarks/TextTemplate.Benchmarks -- --filter "*"
+```
+
+BenchmarkDotNet will then execute both the basic and advanced scenarios.
+
+Example results on a small container:
+
+| Method | Mean | Error | StdDev |
+|-------|------:|------:|------:|
+| GoTextTemplate_NET | 477.1 us | 371.94 us | 20.39 us |
+| Handlebars | 47,455.5 us | 79,242.45 us | 4,343.55 us |
+| Scriban | 202.1 us | 426.47 us | 23.38 us |
+| DotLiquid | 467.4 us | 86.21 us | 4.73 us |
+
 ## Claude's suggestions
 https://gist.github.com/yetanotherchris/c80d0fadb5a2ee5b4beb0a4384020dbf.js
 
