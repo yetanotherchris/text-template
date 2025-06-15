@@ -6,7 +6,9 @@ using System.Text.RegularExpressions;
 using System.Text.Encodings.Web;
 using System.Net;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Atn;
 using Antlr4.Runtime.Tree;
+using Antlr4.Runtime.Misc;
 
 namespace TextTemplate;
 
@@ -22,17 +24,8 @@ internal static class TemplateEngine
     /// </summary>
     public static string Process(string templateString, IDictionary<string, object> data)
     {
-        templateString = PreprocessWhitespace(templateString);
-        templateString = PreprocessComments(templateString);
-        var inputStream = new AntlrInputStream(templateString);
-        var lexer = new GoTextTemplateLexer(inputStream);
-        var tokens = new CommonTokenStream(lexer);
-        var parser = new GoTextTemplateParser(tokens);
-        IParseTree tree = parser.template();
-
-        var templates = new Dictionary<string, GoTextTemplateParser.ContentContext>();
-        var visitor = new ReplacementVisitor(data, templates);
-        return visitor.Visit(tree);
+        var tree = Parse(templateString);
+        return Process(tree, data);
     }
 
     /// <summary>
@@ -41,13 +34,44 @@ internal static class TemplateEngine
     public static void Validate(string templateString)
     {
         if (templateString == null) throw new ArgumentNullException(nameof(templateString));
+        Parse(templateString);
+    }
+
+    internal static GoTextTemplateParser.TemplateContext Parse(string templateString)
+    {
         templateString = PreprocessWhitespace(templateString);
         templateString = PreprocessComments(templateString);
         var inputStream = new AntlrInputStream(templateString);
         var lexer = new GoTextTemplateLexer(inputStream);
         var tokens = new CommonTokenStream(lexer);
-        var parser = new GoTextTemplateParser(tokens);
-        parser.template();
+        var parser = new GoTextTemplateParser(tokens)
+        {
+            ErrorHandler = new BailErrorStrategy()
+        };
+        parser.Interpreter.PredictionMode = PredictionMode.SLL;
+        try
+        {
+            return parser.template();
+        }
+        catch (ParseCanceledException)
+        {
+            inputStream = new AntlrInputStream(templateString);
+            lexer = new GoTextTemplateLexer(inputStream);
+            tokens = new CommonTokenStream(lexer);
+            parser = new GoTextTemplateParser(tokens)
+            {
+                ErrorHandler = new DefaultErrorStrategy()
+            };
+            parser.Interpreter.PredictionMode = PredictionMode.LL;
+            return parser.template();
+        }
+    }
+
+    internal static string Process(GoTextTemplateParser.TemplateContext tree, IDictionary<string, object> data)
+    {
+        var templates = new Dictionary<string, GoTextTemplateParser.ContentContext>();
+        var visitor = new ReplacementVisitor(data, templates);
+        return visitor.Visit(tree);
     }
 
     /// <summary>
@@ -59,6 +83,13 @@ internal static class TemplateEngine
         IDictionary<string, object> dict = model as IDictionary<string, object> ??
             ToDictionary(model!);
         return Process(templateString, dict);
+    }
+
+    internal static string Process<T>(GoTextTemplateParser.TemplateContext tree, T model)
+    {
+        IDictionary<string, object> dict = model as IDictionary<string, object> ??
+            ToDictionary(model!);
+        return Process(tree, dict);
     }
 
     private static string PreprocessWhitespace(string template)

@@ -207,10 +207,10 @@ The model contains five strings in the `Items` list so every engine performs a s
 
 | Method | Mean | Error | StdDev |
 |-------|------:|------:|------:|
-| GoTextTemplate (.NET) | 14.52 us | 0.18 us | 0.15 us |
-| Handlebars.Net | 1,857 us | 32 us | 29 us |
-| Scriban | 14.62 us | 0.29 us | 0.81 us |
-| DotLiquid | 13.79 us | 0.27 us | 0.28 us |
+| GoTextTemplate (.NET) | 22.17 us | 13.37 us | 0.73 us |
+| Handlebars.Net | 2,777.65 us | 2,581.13 us | 141.48 us |
+| Scriban | 22.10 us | 13.73 us | 0.75 us |
+| DotLiquid | 20.88 us | 38.64 us | 2.12 us |
 | Go text/template | 1.69 us | 0.00 us | 0.00 us |
 
 ### Advanced Scenario Benchmarks
@@ -234,10 +234,10 @@ Example results on a small container:
 
 | Method | Mean | Error | StdDev |
 |-------|------:|------:|------:|
-| GoTextTemplate_NET | 477.1 us | 371.94 us | 20.39 us |
-| Handlebars | 47,455.5 us | 79,242.45 us | 4,343.55 us |
-| Scriban | 202.1 us | 426.47 us | 23.38 us |
-| DotLiquid | 467.4 us | 86.21 us | 4.73 us |
+| GoTextTemplate_NET | 272.1 us | 317.5 us | 17.40 us |
+| Handlebars | 63,860.9 us | 26,014.2 us | 1,425.93 us |
+| Scriban | 286.3 us | 778.8 us | 42.69 us |
+| DotLiquid | 728.0 us | 1,120.4 us | 61.41 us |
 | Go text/template | 0.79 us | 0.00 us | 0.00 us |
 
 ## Claude's suggestions
