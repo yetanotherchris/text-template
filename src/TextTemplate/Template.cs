@@ -12,6 +12,7 @@ namespace TextTemplate;
 public class Template
 {
     private string _templateString = string.Empty;
+    private GoTextTemplateParser.TemplateContext? _parseTree;
 
     /// <summary>
     /// The template name.
@@ -34,8 +35,7 @@ public class Template
     public Template Parse(string templateString)
     {
         if (templateString == null) throw new ArgumentNullException(nameof(templateString));
-        // Validate using the TemplateEngine so parsing rules remain consistent.
-        TemplateEngine.Validate(templateString);
+        _parseTree = TemplateEngine.Parse(templateString);
         _templateString = templateString;
         return this;
     }
@@ -59,7 +59,9 @@ public class Template
     /// </summary>
     public string Execute(IDictionary<string, object> data)
     {
-        return TemplateEngine.Process(_templateString, data);
+        if (_parseTree == null)
+            _parseTree = TemplateEngine.Parse(_templateString);
+        return TemplateEngine.Process(_parseTree, data);
     }
 
     /// <summary>
@@ -67,7 +69,9 @@ public class Template
     /// </summary>
     public string Execute<T>(T model)
     {
-        return TemplateEngine.Process(_templateString, model);
+        if (_parseTree == null)
+            _parseTree = TemplateEngine.Parse(_templateString);
+        return TemplateEngine.Process(_parseTree, model);
     }
 
     /// <summary>

@@ -2,16 +2,27 @@
 
 [![NuGet](https://img.shields.io/nuget/v/go-text-template.svg)](https://www.nuget.org/packages/go-text-template/)
 
-This project is a C# implementation of Go's template engine using ANTLR for parsing. It began as an experiment to see whether OpenAI Codex could port the Go implementation to .NET. Claude.AI helped with explanations and refinements along the way.
-The source code in this repository was largely produced by Codex with input
-from Claude.AI, and this README itself was also authored using Codex.
+text/template is a C# implementation of Go's template engine using ANTLR for parsing. It began as an experiment to see whether OpenAI Codex could port the Go implementation to .NET. Claude AI helped with explanations and refinements along the way, but the prompts were from my own knowledge of Antlr and grammars, and obviously C#.  
+
+It ported the Go code to begin with, but then I realised Antlr would probably be a safer and more readable alternative than a straight Go ---> C# port.
+
+This README itself was also largely authored using Codex. Internally the engine uses an ANTLR-generated lexer and parser.
 
 The original Go package can be found here:
 
 - https://pkg.go.dev/text/template#pkg-overview
 - https://cs.opensource.google/go/go/+/refs/tags/go1.24.4:src/text/template/template.go
 
-This library now contains virtually all functionality from the original Go text/template package. Parse templates with `Template.New("name").Parse(text)` and execute them with `Execute` to perform variable substitution, loops and conditionals. Internally the engine uses an ANTLR-generated lexer and parser.
+This library now contains virtually all functionality from the original Go text/template package. 
+
+## Usage
+
+```csharp
+var tmpl = Template.New("hello").Parse("Hello {{ .Name }}!");
+var result = tmpl.Execute(new { Name = "World" });
+Console.WriteLine(result); // Hello World!
+```
+
 
 ## Features
 
@@ -123,16 +134,7 @@ var result = Template.New("calc").Parse(template).Execute(new {});
 
 ## Not Implemented Yet
 
-- Custom functions beyond basic comparisons and boolean operators.
 - Custom delimiter support.
-
-## Usage
-
-```csharp
-var tmpl = Template.New("hello").Parse("Hello {{ .Name }}!");
-var result = tmpl.Execute(new { Name = "World" });
-Console.WriteLine(result); // Hello World!
-```
 
 ### Example Template
 
@@ -197,21 +199,25 @@ See the unit tests for more examples covering loops, conditionals and range expr
 
 ## Benchmark Results
 
-The following microbenchmarks were run using [BenchmarkDotNet](https://benchmarkdotnet.org/) on .NET 9.0. Each benchmark renders the same short template:
+The following benchmarks were run using [BenchmarkDotNet](https://benchmarkdotnet.org/) on .NET 9.0, `cpu: AMD Ryzen 7 5700X 8-Core Processor`. Each benchmark renders the same short template:
 
 ```text
 Hello {{ .Name }}! {{ range .Items }}{{ . }} {{ end }}
 ```
 
+```bash
+dotnet run -c Release --project benchmarks/TextTemplate.Benchmarks -- --filter "TemplateBenchmarks*"
+```
+
 The model contains five strings in the `Items` list so every engine performs a small loop. BenchmarkDotNet ran each test using its default configuration which executes a warm‑up phase followed by enough iterations (13–96 in our runs) to collect roughly one second of timing data. The Go implementation was benchmarked with `go test -bench .` using the equivalent template and data.
 
-| Method | Mean | Error | StdDev |
-|-------|------:|------:|------:|
-| GoTextTemplate (.NET) | 14.52 us | 0.18 us | 0.15 us |
-| Handlebars.Net | 1,857 us | 32 us | 29 us |
-| Scriban | 14.62 us | 0.29 us | 0.81 us |
-| DotLiquid | 13.79 us | 0.27 us | 0.28 us |
-| Go text/template | 1.69 us | 0.00 us | 0.00 us |
+| Method         | Mean        | Error     | StdDev    |
+|--------------- |------------:|----------:|----------:|
+| GoTextTemplate |    15.28 us |  0.238 us |  0.222 us |
+| Handlebars.net | 1,721.10 us | 29.683 us | 26.313 us |
+| Scriban        |    15.36 us |  0.304 us |  0.482 us |
+| DotLiquid      |    12.98 us |  0.162 us |  0.151 us |
+| Go text/template | 2,167 ns  | (505,638 iterations ) |
 
 ### Advanced Scenario Benchmarks
 
@@ -220,11 +226,10 @@ loads the Kubernetes-style YAML templates found under `tests/TestData` and
 executes them as a single nested template. Run the .NET benchmarks with:
 
 ```bash
-dotnet run -c Release --project benchmarks/TextTemplate.Benchmarks -- --filter "*"
+dotnet run -c Release --project benchmarks/TextTemplate.Benchmarks -- --filter "ComplexNestedTemplateBenchmarks*"
 ```
 
-BenchmarkDotNet will then execute both the basic and advanced scenarios. The Go
-implementation can be benchmarked separately with:
+The Go implementation can be benchmarked separately with:
 
 ```bash
 go test -bench BenchmarkGoComplexTemplate ./benchmarks/go -benchmem
@@ -232,16 +237,16 @@ go test -bench BenchmarkGoComplexTemplate ./benchmarks/go -benchmem
 
 Example results on a small container:
 
-| Method | Mean | Error | StdDev |
-|-------|------:|------:|------:|
-| GoTextTemplate_NET | 477.1 us | 371.94 us | 20.39 us |
-| Handlebars | 47,455.5 us | 79,242.45 us | 4,343.55 us |
-| Scriban | 202.1 us | 426.47 us | 23.38 us |
-| DotLiquid | 467.4 us | 86.21 us | 4.73 us |
-| Go text/template | 0.79 us | 0.00 us | 0.00 us |
+| Method             | Mean        | Error     | StdDev    |
+|------------------- |------------:|----------:|----------:|
+| GoTextTemplate_NET |    172.0 us |   3.19 us |   2.98 us |
+| Handlebars.net     | 47,411.7 us | 679.98 us | 602.78 us |
+| Scriban            |    195.4 us |   3.07 us |   3.01 us |
+| DotLiquid          |    417.5 us |   6.07 us |   5.38 us |
+| Go text/template | 2,167 ns  | (1,218,702 iterations ) |
 
 ## Claude's suggestions
-https://gist.github.com/yetanotherchris/c80d0fadb5a2ee5b4beb0a4384020dbf.js
+https://gist.github.com/yetanotherchris/c80d0fadb5a2ee5b4beb0a4384020dbf
 
 ## License
 
