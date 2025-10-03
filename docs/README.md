@@ -39,7 +39,7 @@ Console.WriteLine(result); // Hello World!
 - Whitespace trimming with `{{-` and `-}}` and comment syntax `{{/* ... */}}`.
 - Support for `with`, `define`, `template` and `block` directives.
 
-## Example Scenarios
+## Template reference
 
 ```
 // -- 1. Variable Interpolation
@@ -132,11 +132,7 @@ var result = Template.New("calc").Parse(template).Execute(new {});
 // call - invoke a function value
 ```
 
-## Not Implemented Yet
-
-- Custom delimiter support.
-
-### Example Template
+### Example template usage
 
 ```csharp
 // Define a named template using conditionals and a range loop
@@ -196,6 +192,10 @@ string callResult = Template.New("calc").Parse(callTmpl).Execute(new {});
 // callResult == "5"
 ```
 See the unit tests for more examples covering loops, conditionals and range expressions. The `YmlTemplateFileTest` shows how to render a full Kubernetes manifest from `tests/TestData/template.yml` with the expected output in `tests/TestData/expected.yml`.
+
+## Not Implemented Yet
+
+- Custom delimiter support.
 
 ## Benchmark Results
 
