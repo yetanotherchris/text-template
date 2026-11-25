@@ -199,7 +199,7 @@ See the unit tests for more examples covering loops, conditionals and range expr
 
 ## Benchmark Results
 
-The following benchmarks were run using [BenchmarkDotNet](https://benchmarkdotnet.org/) on .NET 9.0, `cpu: AMD Ryzen 7 5700X 8-Core Processor`. Each benchmark renders the same short template:
+The following benchmarks were run using [BenchmarkDotNet](https://benchmarkdotnet.org/) on .NET 11.0, `cpu: AMD Ryzen 7 5700X 8-Core Processor`. Each benchmark renders the same short template:
 
 ```text
 Hello {{ .Name }}! {{ range .Items }}{{ . }} {{ end }}
@@ -209,15 +209,14 @@ Hello {{ .Name }}! {{ range .Items }}{{ . }} {{ end }}
 dotnet run -c Release --project benchmarks/TextTemplate.Benchmarks -- --filter "TemplateBenchmarks*"
 ```
 
-The model contains five strings in the `Items` list so every engine performs a small loop. BenchmarkDotNet ran each test using its default configuration which executes a warm‑up phase followed by enough iterations (13–96 in our runs) to collect roughly one second of timing data. The Go implementation was benchmarked with `go test -bench .` using the equivalent template and data.
+The model contains five strings in the `Items` list so every engine performs a small loop. BenchmarkDotNet ran each test using its default configuration, which executes a warm-up phase followed by enough iterations to collect roughly one second of timing data. The Go implementation can be benchmarked with `go test -bench .` using the equivalent template and data.
 
-| Method         | Mean        | Error     | StdDev    |
-|--------------- |------------:|----------:|----------:|
-| GoTextTemplate |    15.28 us |  0.238 us |  0.222 us |
-| Handlebars.net | 1,721.10 us | 29.683 us | 26.313 us |
-| Scriban        |    15.36 us |  0.304 us |  0.482 us |
-| DotLiquid      |    12.98 us |  0.162 us |  0.151 us |
-| Go text/template | 2,167 ns  | (505,638 iterations ) |
+| Method          | Mean        | Error     | StdDev    |
+|---------------- |------------:|----------:|----------:|
+| this library    |     8.097 us |  0.159 us |  0.177 us |
+| Handlebars.Net  | 2,958.484 us | 34.660 us | 30.725 us |
+| Scriban         |     8.036 us |  0.153 us |  0.135 us |
+| DotLiquid       |     8.037 us |  0.151 us |  0.149 us |
 
 ### Advanced Scenario Benchmarks
 
@@ -235,15 +234,14 @@ The Go implementation can be benchmarked separately with:
 go test -bench BenchmarkGoComplexTemplate ./benchmarks/go -benchmem
 ```
 
-Example results on a small container:
+Results on the same machine:
 
-| Method             | Mean        | Error     | StdDev    |
-|------------------- |------------:|----------:|----------:|
-| GoTextTemplate_NET |    172.0 us |   3.19 us |   2.98 us |
-| Handlebars.net     | 47,411.7 us | 679.98 us | 602.78 us |
-| Scriban            |    195.4 us |   3.07 us |   3.01 us |
-| DotLiquid          |    417.5 us |   6.07 us |   5.38 us |
-| Go text/template | 2,167 ns  | (1,218,702 iterations ) |
+| Method         | Mean         | Error       | StdDev      |
+|--------------- |-------------:|------------:|------------:|
+| this library   |     80.87 us |    1.588 us |    1.890 us |
+| Handlebars.Net | 74,836.15 us | 1,351.128 us | 1,197.740 us |
+| Scriban        |    116.64 us |    1.967 us |    3.232 us |
+| DotLiquid      |    254.03 us |    5.013 us |   10.792 us |
 
 ## Claude's suggestions
 https://gist.github.com/yetanotherchris/c80d0fadb5a2ee5b4beb0a4384020dbf
