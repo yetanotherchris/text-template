@@ -213,12 +213,12 @@ dotnet run -c Release --project benchmarks/TextTemplate.Benchmarks -- --filter "
 
 The model contains five strings in the `Items` list so every engine performs a small loop. Each engine parses/compiles its template once in `[GlobalSetup]` so the benchmarks measure rendering performance. BenchmarkDotNet ran each test using its default configuration, which executes a warm-up phase followed by enough iterations to collect roughly one second of timing data. The Go implementation can be benchmarked with `go test -bench .` using the equivalent template and data.
 
-| Method          | Mean       | Error     | StdDev    |
-|---------------- |-----------:|----------:|----------:|
-| this library    | 2,098.6 ns |  37.79 ns |  40.44 ns |
-| Handlebars.Net  |   466.5 ns |   6.11 ns |   5.72 ns |
-| Scriban         | 5,591.6 ns | 110.92 ns | 123.28 ns |
-| DotLiquid       | 3,365.4 ns |  57.51 ns |  50.99 ns |
+| Method          | Mean       | Error    | StdDev   |
+|---------------- |-----------:|---------:|---------:|
+| this library    |   122.5 ns |  1.24 ns |  1.16 ns |
+| Handlebars.Net  |   476.0 ns |  3.82 ns |  3.58 ns |
+| Scriban         | 5,530.3 ns | 61.77 ns | 51.58 ns |
+| DotLiquid       | 3,351.5 ns | 24.67 ns | 23.08 ns |
 
 ### Advanced Scenario Benchmarks
 
@@ -238,9 +238,9 @@ go test -bench BenchmarkGoComplexTemplate ./benchmarks/go -benchmem
 
 Results on the same machine (all engines pre-parsed/compiled in `[GlobalSetup]`):
 
-| Method         | Mean     | Error    | StdDev   |
-|--------------- |---------:|---------:|---------:|
-| this library   | 50.59 us | 1.005 us | 1.157 us |
-| Handlebars.Net | 12.69 us | 0.235 us | 0.231 us |
-| Scriban        | 33.93 us | 0.544 us | 0.605 us |
-| DotLiquid      | 92.06 us | 1.651 us | 1.378 us |
+| Method         | Mean      | Error     | StdDev    |
+|--------------- |----------:|----------:|----------:|
+| this library   |  5.727 us | 0.0930 us | 0.0776 us |
+| Handlebars.Net | 12.310 us | 0.0452 us | 0.0401 us |
+| Scriban        | 32.484 us | 0.3342 us | 0.2609 us |
+| DotLiquid      | 91.815 us | 0.5065 us | 0.4490 us |
