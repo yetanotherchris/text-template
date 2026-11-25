@@ -21,6 +21,8 @@ public class User
 
 public class TemplateEngineTests
 {
+    // Verbatim templates pick up the checkout's newlines (CRLF when core.autocrlf is true).
+    private static string Lf(string text) => text.Replace("\r\n", "\n").Replace("\r", "\n");
 
     [Fact]
     public void Template_ReturnsPlainTextUnchanged()
@@ -57,7 +59,7 @@ public class TemplateEngineTests
     [Fact]
     public void ReplacesVariablesInLetter()
     {
-        const string letter = @"Dear {{ .Name }},
+        string letter = Lf(@"Dear {{ .Name }},
 {{ if .Attended }}
 It was a pleasure to see you at the wedding.
 {{ else }}
@@ -65,7 +67,7 @@ It is a shame you couldn't make it to the wedding.
 {{ end }}
 Thank you for the lovely {{ .Gift }}.
 Best wishes,
-Josie";
+Josie");
 
         var result = TemplateEngine.Process(letter, new Dictionary<string, object>
         {
@@ -373,11 +375,11 @@ Josie";
     [Fact]
     public void RangeElseIndentation()
     {
-        const string tmpl = @"{{ range item := .Items }}
+        string tmpl = Lf(@"{{ range item := .Items }}
   Item: {{ item }}
 {{ else }}
   No items found
-{{ end }}";
+{{ end }}");
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
         {
             ["Items"] = Array.Empty<string>()
@@ -389,12 +391,12 @@ Josie";
     [Fact]
     public void NestedLoops()
     {
-        const string tmpl = @"{{ range .Categories }}
+        string tmpl = Lf(@"{{ range .Categories }}
   Category: {{ .Name }}
   {{ range .Items }}
     - {{ .Title }}
   {{ end }}
-{{ end }}";
+{{ end }}");
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
         {
             ["Categories"] = new[]
@@ -425,11 +427,11 @@ Josie";
     [Fact]
     public void RangeIndexEmptySlice()
     {
-        const string tmpl = @"{{ range i, item := .EmptySlice }}
+        string tmpl = Lf(@"{{ range i, item := .EmptySlice }}
   Never executed
 {{ else }}
   Empty slice message
-{{ end }}";
+{{ end }}");
         var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
         {
             ["EmptySlice"] = Array.Empty<int>()
