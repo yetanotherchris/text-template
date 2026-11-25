@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Antlr4.Runtime;
 
 namespace TextTemplate;
 
@@ -12,7 +11,7 @@ namespace TextTemplate;
 public class Template
 {
     private string _templateString = string.Empty;
-    private GoTextTemplateParser.TemplateContext? _parseTree;
+    private CompiledTemplate? _compiledTemplate;
 
     /// <summary>
     /// The template name.
@@ -35,7 +34,7 @@ public class Template
     public Template Parse(string templateString)
     {
         if (templateString == null) throw new ArgumentNullException(nameof(templateString));
-        _parseTree = TemplateEngine.Parse(templateString);
+        _compiledTemplate = TemplateEngine.Parse(templateString);
         _templateString = templateString;
         return this;
     }
@@ -59,9 +58,8 @@ public class Template
     /// </summary>
     public string Execute(IDictionary<string, object> data)
     {
-        if (_parseTree == null)
-            _parseTree = TemplateEngine.Parse(_templateString);
-        return TemplateEngine.Process(_parseTree, data);
+        var compiled = GetOrCompileTemplate();
+        return TemplateEngine.Process(compiled, data);
     }
 
     /// <summary>
@@ -69,9 +67,18 @@ public class Template
     /// </summary>
     public string Execute<T>(T model)
     {
-        if (_parseTree == null)
-            _parseTree = TemplateEngine.Parse(_templateString);
-        return TemplateEngine.Process(_parseTree, model);
+        var compiled = GetOrCompileTemplate();
+        return TemplateEngine.Process(compiled, model);
+    }
+
+    private CompiledTemplate GetOrCompileTemplate()
+    {
+        var compiled = Volatile.Read(ref _compiledTemplate);
+        if (compiled != null)
+            return compiled;
+
+        compiled = TemplateEngine.Parse(_templateString);
+        return Interlocked.CompareExchange(ref _compiledTemplate, compiled, null) ?? compiled;
     }
 
     /// <summary>

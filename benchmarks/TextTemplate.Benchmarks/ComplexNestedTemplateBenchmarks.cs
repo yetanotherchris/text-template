@@ -1,23 +1,21 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using BenchmarkDotNet.Attributes;
-using TextTemplate;
-using TTTemplate = TextTemplate.Template;
-using TextTemplate.Tests;
-using HandlebarsDotNet;
-using Scriban;
 using DotLiquid;
-using ScribanTemplateClass = Scriban.Template;
+using HandlebarsDotNet;
+using TextTemplate.Tests;
 using DotLiquidTemplateClass = DotLiquid.Template;
 using Hbs = HandlebarsDotNet.Handlebars;
+using ScribanTemplateClass = Scriban.Template;
+using TTTemplate = TextTemplate.Template;
 
 public class ComplexNestedTemplateBenchmarks
 {
     private TTTemplate _tmpl = null!;
-    private string _hbText = null!;
-    private string _scribanText = null!;
-    private string _liquidText = null!;
+    private HandlebarsTemplate<object, object> _hbCompiled = null!;
+    private ScribanTemplateClass _scribanCompiled = null!;
+    private DotLiquidTemplateClass _liquidCompiled = null!;
     private Dictionary<string, object> _values = null!;
 
     [GlobalSetup]
@@ -32,11 +30,12 @@ public class ComplexNestedTemplateBenchmarks
         string scribanPath = Path.Combine(baseDir, "TestData", "complex-template.scriban");
         string liquidPath = Path.Combine(baseDir, "TestData", "complex-template.liquid");
 
-        _tmpl = TTTemplate.New("complex").ParseFiles(depPath, svcPath, ingPath, rootPath);
-        _hbText = File.ReadAllText(hbPath);
-        _scribanText = File.ReadAllText(scribanPath);
-        _liquidText = File.ReadAllText(liquidPath);
         DotLiquidTemplateClass.NamingConvention = new DotLiquid.NamingConventions.CSharpNamingConvention();
+
+        _tmpl = TTTemplate.New("complex").ParseFiles(depPath, svcPath, ingPath, rootPath);
+        _hbCompiled = Hbs.Compile(File.ReadAllText(hbPath));
+        _scribanCompiled = ScribanTemplateClass.Parse(File.ReadAllText(scribanPath));
+        _liquidCompiled = DotLiquidTemplateClass.Parse(File.ReadAllText(liquidPath));
         _values = ComplexNestedTemplateData.Create();
     }
 
@@ -44,24 +43,11 @@ public class ComplexNestedTemplateBenchmarks
     public string GoTextTemplate_NET() => _tmpl.Execute(_values);
 
     [Benchmark]
-    public string Handlebars()
-    {
-        var compiled = Hbs.Compile(_hbText);
-        return compiled(_values);
-    }
+    public string Handlebars() => _hbCompiled(_values);
 
     [Benchmark]
-    public string Scriban()
-    {
-        var tmpl = ScribanTemplateClass.Parse(_scribanText);
-        return tmpl.Render(_values);
-    }
+    public string Scriban() => _scribanCompiled.Render(_values);
 
     [Benchmark]
-    public string DotLiquid()
-    {
-        var tmpl = DotLiquidTemplateClass.Parse(_liquidText);
-        return tmpl.Render(Hash.FromDictionary(_values));
-    }
+    public string DotLiquid() => _liquidCompiled.Render(Hash.FromDictionary(_values));
 }
-

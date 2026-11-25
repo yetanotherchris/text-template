@@ -4,18 +4,7 @@
 
 text/template is a C# implementation of Go's template engine using ANTLR for parsing. It began as an experiment to see whether OpenAI Codex could port the Go implementation to .NET. Claude AI helped with explanations and refinements along the way, but the prompts were from my own knowledge of Antlr and grammars, and obviously C#.  
 
-The port was originally done using OpenAI Codex (ChatGPT 4x) and Claude (4.x).
-
-It ported the Go code to begin with, but then I realised Antlr would probably be a safer and more readable alternative than a straight Go ---> C# port.
-
-This README itself was also largely authored using Codex. Internally the engine uses an ANTLR-generated lexer and parser.
-
-The original Go package can be found here:
-
-- https://pkg.go.dev/text/template#pkg-overview
-- https://cs.opensource.google/go/go/+/refs/tags/go1.24.4:src/text/template/template.go
-
-This library now contains virtually all functionality from the original Go text/template package. 
+The port was originally done using OpenAI Codex (ChatGPT 4x) and Claude (4.x), and big optimisations using Gemini 4 Neon (claims it is faster than Go's text/template now).
 
 ## Usage
 
@@ -24,7 +13,6 @@ var tmpl = Template.New("hello").Parse("Hello {{ .Name }}!");
 var result = tmpl.Execute(new { Name = "World" });
 Console.WriteLine(result); // Hello World!
 ```
-
 
 ## Features
 
@@ -211,14 +199,17 @@ Hello {{ .Name }}! {{ range .Items }}{{ . }} {{ end }}
 dotnet run -c Release --project benchmarks/TextTemplate.Benchmarks -- --filter "TemplateBenchmarks*"
 ```
 
-The model contains five strings in the `Items` list so every engine performs a small loop. BenchmarkDotNet ran each test using its default configuration, which executes a warm-up phase followed by enough iterations to collect roughly one second of timing data. The Go implementation can be benchmarked with `go test -bench .` using the equivalent template and data.
+The model contains five strings in the `Items` list so every engine performs a small loop. Each engine parses/compiles its template once in `[GlobalSetup]` so the benchmarks measure rendering performance. BenchmarkDotNet ran each test using its default configuration, which executes a warm-up phase followed by enough iterations to collect roughly one second of timing data. The Go implementation can be benchmarked with `go test -bench .` using the equivalent template and data.
 
-| Method          | Mean        | Error     | StdDev    |
-|---------------- |------------:|----------:|----------:|
-| this library    |     8.097 us |  0.159 us |  0.177 us |
-| Handlebars.Net  | 2,958.484 us | 34.660 us | 30.725 us |
-| Scriban         |     8.036 us |  0.153 us |  0.135 us |
-| DotLiquid       |     8.037 us |  0.151 us |  0.149 us |
+*Note:* the libraries being compared don't have all the functionality of text/template, handlebars for example doesn't allow logic in the templates.
+
+| Method            | Mean       | Error    | StdDev   |
+|------------------ |-----------:|---------:|---------:|
+| this library      |   122.5 ns |  1.24 ns |  1.16 ns |
+| Handlebars.Net    |   476.0 ns |  3.82 ns |  3.58 ns |
+| Go text/template  | 1,200.0 ns |      n/a |      n/a |
+| DotLiquid         | 3,351.5 ns | 24.67 ns | 23.08 ns |
+| Scriban           | 5,530.3 ns | 61.77 ns | 51.58 ns |
 
 ### Advanced Scenario Benchmarks
 
@@ -236,11 +227,23 @@ The Go implementation can be benchmarked separately with:
 go test -bench BenchmarkGoComplexTemplate ./benchmarks/go -benchmem
 ```
 
-Results on the same machine:
+Results on the same machine (all engines pre-parsed/compiled in `[GlobalSetup]` / `init()`):
 
-| Method         | Mean         | Error       | StdDev      |
-|--------------- |-------------:|------------:|------------:|
-| this library   |     80.87 us |    1.588 us |    1.890 us |
-| Handlebars.Net | 74,836.15 us | 1,351.128 us | 1,197.740 us |
-| Scriban        |    116.64 us |    1.967 us |    3.232 us |
-| DotLiquid      |    254.03 us |    5.013 us |   10.792 us |
+| Method           | Mean      | Error     | StdDev    |
+|----------------- |----------:|----------:|----------:|
+| this library     |  5.727 us | 0.0930 us | 0.0776 us |
+| Handlebars.Net   | 12.310 us | 0.0452 us | 0.0401 us |
+| Scriban          | 32.484 us | 0.3342 us | 0.2609 us |
+| Go text/template | 45.294 us |       n/a |       n/a |
+| DotLiquid        | 91.815 us | 0.5065 us | 0.4490 us |
+
+### Porting notes
+
+The Go code was ported to begin with, but then I realised Antlr would probably be a safer and more readable alternative than a direct Go to C# AST port. Internally the engine uses an ANTLR-generated lexer and parser, with optimisations using a lightweight custom AST by Gemini 4 Neon.
+
+The original Go package can be found here:
+
+- https://pkg.go.dev/text/template#pkg-overview
+- https://cs.opensource.google/go/go/+/refs/tags/go1.24.4:src/text/template/template.go
+
+The library contains virtually all functionality from the original Go text/template package. 
