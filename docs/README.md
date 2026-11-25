@@ -211,14 +211,14 @@ Hello {{ .Name }}! {{ range .Items }}{{ . }} {{ end }}
 dotnet run -c Release --project benchmarks/TextTemplate.Benchmarks -- --filter "TemplateBenchmarks*"
 ```
 
-The model contains five strings in the `Items` list so every engine performs a small loop. BenchmarkDotNet ran each test using its default configuration, which executes a warm-up phase followed by enough iterations to collect roughly one second of timing data. The Go implementation can be benchmarked with `go test -bench .` using the equivalent template and data.
+The model contains five strings in the `Items` list so every engine performs a small loop. Each engine parses/compiles its template once in `[GlobalSetup]` so the benchmarks measure rendering performance. BenchmarkDotNet ran each test using its default configuration, which executes a warm-up phase followed by enough iterations to collect roughly one second of timing data. The Go implementation can be benchmarked with `go test -bench .` using the equivalent template and data.
 
-| Method          | Mean        | Error     | StdDev    |
-|---------------- |------------:|----------:|----------:|
-| this library    |     8.097 us |  0.159 us |  0.177 us |
-| Handlebars.Net  | 2,958.484 us | 34.660 us | 30.725 us |
-| Scriban         |     8.036 us |  0.153 us |  0.135 us |
-| DotLiquid       |     8.037 us |  0.151 us |  0.149 us |
+| Method          | Mean       | Error     | StdDev    |
+|---------------- |-----------:|----------:|----------:|
+| this library    | 2,098.6 ns |  37.79 ns |  40.44 ns |
+| Handlebars.Net  |   466.5 ns |   6.11 ns |   5.72 ns |
+| Scriban         | 5,591.6 ns | 110.92 ns | 123.28 ns |
+| DotLiquid       | 3,365.4 ns |  57.51 ns |  50.99 ns |
 
 ### Advanced Scenario Benchmarks
 
@@ -236,11 +236,11 @@ The Go implementation can be benchmarked separately with:
 go test -bench BenchmarkGoComplexTemplate ./benchmarks/go -benchmem
 ```
 
-Results on the same machine:
+Results on the same machine (all engines pre-parsed/compiled in `[GlobalSetup]`):
 
-| Method         | Mean         | Error       | StdDev      |
-|--------------- |-------------:|------------:|------------:|
-| this library   |     80.87 us |    1.588 us |    1.890 us |
-| Handlebars.Net | 74,836.15 us | 1,351.128 us | 1,197.740 us |
-| Scriban        |    116.64 us |    1.967 us |    3.232 us |
-| DotLiquid      |    254.03 us |    5.013 us |   10.792 us |
+| Method         | Mean     | Error    | StdDev   |
+|--------------- |---------:|---------:|---------:|
+| this library   | 50.59 us | 1.005 us | 1.157 us |
+| Handlebars.Net | 12.69 us | 0.235 us | 0.231 us |
+| Scriban        | 33.93 us | 0.544 us | 0.605 us |
+| DotLiquid      | 92.06 us | 1.651 us | 1.378 us |
