@@ -4,6 +4,8 @@
 
 text/template is a C# implementation of Go's template engine using ANTLR for parsing. It began as an experiment to see whether OpenAI Codex could port the Go implementation to .NET. Claude AI helped with explanations and refinements along the way, but the prompts were from my own knowledge of Antlr and grammars, and obviously C#.  
 
+The port was originally done using OpenAI Codex (ChatGPT 4x) and Claude (4.x).
+
 It ported the Go code to begin with, but then I realised Antlr would probably be a safer and more readable alternative than a straight Go ---> C# port.
 
 This README itself was also largely authored using Codex. Internally the engine uses an ANTLR-generated lexer and parser.
