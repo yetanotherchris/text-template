@@ -244,10 +244,3 @@ Results on the same machine:
 | Handlebars.Net | 74,836.15 us | 1,351.128 us | 1,197.740 us |
 | Scriban        |    116.64 us |    1.967 us |    3.232 us |
 | DotLiquid      |    254.03 us |    5.013 us |   10.792 us |
-
-
-## License
-
-This project is released under the MIT license. Source code was produced by
-OpenAI Codex with assistance from Claude.AI.
-This README was written using OpenAI Codex.
