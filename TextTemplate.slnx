@@ -1,0 +1,12 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/TextTemplate.Benchmarks/TextTemplate.Benchmarks.csproj" />
+  </Folder>
+  <Project Path="src/TextTemplate/TextTemplate.csproj" />
+  <Project Path="tests/TextTemplate.Tests/TextTemplate.Tests.csproj" />
+</Solution>
