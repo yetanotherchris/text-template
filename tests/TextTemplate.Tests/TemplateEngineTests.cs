@@ -805,4 +805,22 @@ Josie");
         });
         result.ShouldBe("3");
     }
+
+    [Fact]
+    public void PipelineDefault_ReturnsFallbackForNullEmptyOrZero()
+    {
+        const string tmpl =
+            "{{ .Present | default \"fallback\" }}|" +
+            "{{ .Empty | default \"fallback\" }}|" +
+            "{{ .Missing | default \"fallback\" }}|" +
+            "{{ .Zero | default 3 }}";
+
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Present"] = "ok",
+            ["Empty"] = "",
+            ["Zero"] = 0
+        });
+        result.ShouldBe("ok|fallback|fallback|3");
+    }
 }

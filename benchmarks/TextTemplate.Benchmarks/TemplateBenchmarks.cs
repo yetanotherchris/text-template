@@ -7,6 +7,7 @@ using Hbs = HandlebarsDotNet.Handlebars;
 using ScribanTemplateClass = Scriban.Template;
 using TTTemplate = TextTemplate.Template;
 
+[MemoryDiagnoser]
 public class TemplateBenchmarks
 {
     private const string TTTemplateText = "Hello {{ .Name }}! {{ range .Items }}{{ . }} {{ end }}";

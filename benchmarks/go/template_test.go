@@ -3,8 +3,11 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"reflect"
+	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"text/template"
 )
@@ -40,6 +43,48 @@ var complexTmpl = template.New("complex").Funcs(template.FuncMap{
 func init() {
 	base := "testdata/"
 	template.Must(complexTmpl.ParseFiles(base+"complex-template-deployment.yml", base+"complex-template-service.yml", base+"complex-template-ingress.yml", base+"complex-template-data.yml"))
+}
+
+func normalizeLines(s string) []string {
+	s = strings.ReplaceAll(s, "\r\n", "\n")
+	raw := strings.Split(s, "\n")
+	out := make([]string, 0, len(raw))
+	for _, line := range raw {
+		trimmed := strings.TrimSpace(line)
+		if trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+func TestGoTextTemplateOutput(t *testing.T) {
+	var buf bytes.Buffer
+	if err := goTmpl.Execute(&buf, goData); err != nil {
+		t.Fatal(err)
+	}
+	const expected = "Hello Bob! one two three four five "
+	if got := buf.String(); got != expected {
+		t.Fatalf("unexpected output:\ngot:  %q\nwant: %q", got, expected)
+	}
+}
+
+func TestGoComplexTemplateOutput(t *testing.T) {
+	values := map[string]any{"Values": complexData()}
+	var buf bytes.Buffer
+	if err := complexTmpl.ExecuteTemplate(&buf, "complex-template-data.yml", values); err != nil {
+		t.Fatal(err)
+	}
+	expectedBytes, err := os.ReadFile("testdata/complex-template-expected.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotLines := normalizeLines(buf.String())
+	wantLines := normalizeLines(string(expectedBytes))
+	if !reflect.DeepEqual(gotLines, wantLines) {
+		t.Fatalf("rendered YAML does not match complex-template-expected.yml (got %d non-empty lines, want %d)", len(gotLines), len(wantLines))
+	}
 }
 
 func BenchmarkGoTextTemplate(b *testing.B) {

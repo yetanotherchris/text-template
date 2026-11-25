@@ -10,6 +10,7 @@ using Hbs = HandlebarsDotNet.Handlebars;
 using ScribanTemplateClass = Scriban.Template;
 using TTTemplate = TextTemplate.Template;
 
+[MemoryDiagnoser]
 public class ComplexNestedTemplateBenchmarks
 {
     private TTTemplate _tmpl = null!;

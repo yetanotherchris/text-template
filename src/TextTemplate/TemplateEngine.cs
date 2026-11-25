@@ -42,6 +42,12 @@ internal static class TemplateEngine
             s = s.Replace("\"", "\\\"");
             return $"\"{s}\"";
         },
+        ["default"] = args =>
+        {
+            if (args.Length == 0) return null;
+            if (args.Length == 1) return args[0];
+            return IsTrue(args[0]) ? args[0] : args[1];
+        },
         ["len"] = args =>
         {
             if (args.Length == 0 || args[0] == null) return 0;

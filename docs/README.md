@@ -203,13 +203,13 @@ The model contains five strings in the `Items` list so every engine performs a s
 
 *Note:* the libraries being compared don't have all the functionality of text/template, handlebars for example doesn't allow logic in the templates.
 
-| Method            | Mean       | Error    | StdDev   |
-|------------------ |-----------:|---------:|---------:|
-| this library      |   122.5 ns |  1.24 ns |  1.16 ns |
-| Handlebars.Net    |   476.0 ns |  3.82 ns |  3.58 ns |
-| Go text/template  | 1,200.0 ns |      n/a |      n/a |
-| DotLiquid         | 3,351.5 ns | 24.67 ns | 23.08 ns |
-| Scriban           | 5,530.3 ns | 61.77 ns | 51.58 ns |
+| Method           | Mean       | Error     | StdDev    | Allocated |
+|----------------- |-----------:|----------:|----------:|----------:|
+| this library     |   122.6 ns |   1.04 ns |   0.92 ns |     424 B |
+| Handlebars.Net   |   471.2 ns |   1.09 ns |   1.02 ns |      96 B |
+| Go text/template | 1,144.5 ns |       n/a |       n/a |     464 B |
+| DotLiquid        | 3,318.3 ns |  18.39 ns |  17.20 ns |  12,768 B |
+| Scriban          | 7,878.2 ns | 155.91 ns | 145.84 ns |  34,350 B |
 
 ### Advanced Scenario Benchmarks
 
@@ -224,18 +224,18 @@ dotnet run -c Release --project benchmarks/TextTemplate.Benchmarks -- --filter "
 The Go implementation can be benchmarked separately with:
 
 ```bash
-go test -bench BenchmarkGoComplexTemplate ./benchmarks/go -benchmem
+go test -bench BenchmarkGoComplexTemplate ./benchmarks/go -benchmem -count=10
 ```
 
-Results on the same machine (all engines pre-parsed/compiled in `[GlobalSetup]` / `init()`):
+Results on the same machine (all engines pre-parsed/compiled in `[GlobalSetup]` / `init()`, `[MemoryDiagnoser]` enabled, Go median of 10 runs):
 
-| Method           | Mean      | Error     | StdDev    |
-|----------------- |----------:|----------:|----------:|
-| this library     |  5.727 us | 0.0930 us | 0.0776 us |
-| Handlebars.Net   | 12.310 us | 0.0452 us | 0.0401 us |
-| Scriban          | 32.484 us | 0.3342 us | 0.2609 us |
-| Go text/template | 45.294 us |       n/a |       n/a |
-| DotLiquid        | 91.815 us | 0.5065 us | 0.4490 us |
+| Method           | Mean      | Error     | StdDev    | Allocated |
+|----------------- |----------:|----------:|----------:|----------:|
+| this library     |  5.448 us | 0.0206 us | 0.0182 us |  18.89 KB |
+| Handlebars.Net   | 12.191 us | 0.0332 us | 0.0311 us |   7.64 KB |
+| Scriban          | 40.216 us | 0.7686 us | 1.0261 us |  74.01 KB |
+| Go text/template | 43.090 us |       n/a |       n/a |  22.05 KB |
+| DotLiquid        | 94.172 us | 0.5013 us | 0.4689 us | 223.62 KB |
 
 ### Porting notes
 
