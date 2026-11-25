@@ -10,7 +10,7 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
     <PackageReference Include="Handlebars.Net" Version="2.1.6" />
-    <PackageReference Include="Scriban" Version="5.9.0" />
+    <PackageReference Include="Scriban" Version="7.6.1" />
     <PackageReference Include="DotLiquid" Version="2.3.197" />
   </ItemGroup>
 

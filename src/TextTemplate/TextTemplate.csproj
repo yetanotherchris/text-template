@@ -4,6 +4,7 @@
     <TargetFramework>net11.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <NoWarn>$(NoWarn);CS3021</NoWarn>
     <PackageId>go-text-template</PackageId>
     <Authors>Chris S.</Authors>
     <Description>A C# version of Go's text/template engine.</Description>
