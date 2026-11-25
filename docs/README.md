@@ -6,16 +6,14 @@ text/template is a C# implementation of Go's template engine using ANTLR for par
 
 The port was originally done using OpenAI Codex (ChatGPT 4x) and Claude (4.x).
 
-It ported the Go code to begin with, but then I realised Antlr would probably be a safer and more readable alternative than a straight Go ---> C# port.
-
-This README itself was also largely authored using Codex. Internally the engine uses an ANTLR-generated lexer and parser.
+It ported the Go code to begin with, but then I realised Antlr would probably be a safer and more readable alternative than a straight Go ---> C# port. Internally the engine uses an ANTLR-generated lexer and parser, with optimisations using a lightweight custom AST by Gemini 4 Neon.
 
 The original Go package can be found here:
 
 - https://pkg.go.dev/text/template#pkg-overview
 - https://cs.opensource.google/go/go/+/refs/tags/go1.24.4:src/text/template/template.go
 
-This library now contains virtually all functionality from the original Go text/template package. 
+The library contains virtually all functionality from the original Go text/template package. 
 
 ## Usage
 
@@ -212,6 +210,8 @@ dotnet run -c Release --project benchmarks/TextTemplate.Benchmarks -- --filter "
 ```
 
 The model contains five strings in the `Items` list so every engine performs a small loop. Each engine parses/compiles its template once in `[GlobalSetup]` so the benchmarks measure rendering performance. BenchmarkDotNet ran each test using its default configuration, which executes a warm-up phase followed by enough iterations to collect roughly one second of timing data. The Go implementation can be benchmarked with `go test -bench .` using the equivalent template and data.
+
+*Note:* the libraries being compared don't have all the functionality of text/template, handlebars for example doesn't allow logic in the templates.
 
 | Method          | Mean       | Error    | StdDev   |
 |---------------- |-----------:|---------:|---------:|
