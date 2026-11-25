@@ -245,8 +245,6 @@ Results on the same machine:
 | Scriban        |    116.64 us |    1.967 us |    3.232 us |
 | DotLiquid      |    254.03 us |    5.013 us |   10.792 us |
 
-## Claude's suggestions
-https://gist.github.com/yetanotherchris/c80d0fadb5a2ee5b4beb0a4384020dbf
 
 ## License
 
