@@ -4,16 +4,7 @@
 
 text/template is a C# implementation of Go's template engine using ANTLR for parsing. It began as an experiment to see whether OpenAI Codex could port the Go implementation to .NET. Claude AI helped with explanations and refinements along the way, but the prompts were from my own knowledge of Antlr and grammars, and obviously C#.  
 
-The port was originally done using OpenAI Codex (ChatGPT 4x) and Claude (4.x).
-
-It ported the Go code to begin with, but then I realised Antlr would probably be a safer and more readable alternative than a straight Go ---> C# port. Internally the engine uses an ANTLR-generated lexer and parser, with optimisations using a lightweight custom AST by Gemini 4 Neon.
-
-The original Go package can be found here:
-
-- https://pkg.go.dev/text/template#pkg-overview
-- https://cs.opensource.google/go/go/+/refs/tags/go1.24.4:src/text/template/template.go
-
-The library contains virtually all functionality from the original Go text/template package. 
+The port was originally done using OpenAI Codex (ChatGPT 4x) and Claude (4.x), and big optimisations using Gemini 4 Neon (claims it is faster than Go's text/template now).
 
 ## Usage
 
@@ -22,7 +13,6 @@ var tmpl = Template.New("hello").Parse("Hello {{ .Name }}!");
 var result = tmpl.Execute(new { Name = "World" });
 Console.WriteLine(result); // Hello World!
 ```
-
 
 ## Features
 
@@ -246,3 +236,14 @@ Results on the same machine (all engines pre-parsed/compiled in `[GlobalSetup]` 
 | Scriban          | 32.484 us | 0.3342 us | 0.2609 us |
 | Go text/template | 45.294 us |       n/a |       n/a |
 | DotLiquid        | 91.815 us | 0.5065 us | 0.4490 us |
+
+### Porting notes
+
+The Go code was ported to begin with, but then I realised Antlr would probably be a safer and more readable alternative than a direct Go to C# AST port. Internally the engine uses an ANTLR-generated lexer and parser, with optimisations using a lightweight custom AST by Gemini 4 Neon.
+
+The original Go package can be found here:
+
+- https://pkg.go.dev/text/template#pkg-overview
+- https://cs.opensource.google/go/go/+/refs/tags/go1.24.4:src/text/template/template.go
+
+The library contains virtually all functionality from the original Go text/template package. 
