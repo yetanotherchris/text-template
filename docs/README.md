@@ -213,12 +213,13 @@ The model contains five strings in the `Items` list so every engine performs a s
 
 *Note:* the libraries being compared don't have all the functionality of text/template, handlebars for example doesn't allow logic in the templates.
 
-| Method          | Mean       | Error    | StdDev   |
-|---------------- |-----------:|---------:|---------:|
-| this library    |   122.5 ns |  1.24 ns |  1.16 ns |
-| Handlebars.Net  |   476.0 ns |  3.82 ns |  3.58 ns |
-| Scriban         | 5,530.3 ns | 61.77 ns | 51.58 ns |
-| DotLiquid       | 3,351.5 ns | 24.67 ns | 23.08 ns |
+| Method            | Mean       | Error    | StdDev   |
+|------------------ |-----------:|---------:|---------:|
+| this library      |   122.5 ns |  1.24 ns |  1.16 ns |
+| Handlebars.Net    |   476.0 ns |  3.82 ns |  3.58 ns |
+| Go text/template  | 1,200.0 ns |      n/a |      n/a |
+| DotLiquid         | 3,351.5 ns | 24.67 ns | 23.08 ns |
+| Scriban           | 5,530.3 ns | 61.77 ns | 51.58 ns |
 
 ### Advanced Scenario Benchmarks
 
@@ -236,11 +237,12 @@ The Go implementation can be benchmarked separately with:
 go test -bench BenchmarkGoComplexTemplate ./benchmarks/go -benchmem
 ```
 
-Results on the same machine (all engines pre-parsed/compiled in `[GlobalSetup]`):
+Results on the same machine (all engines pre-parsed/compiled in `[GlobalSetup]` / `init()`):
 
-| Method         | Mean      | Error     | StdDev    |
-|--------------- |----------:|----------:|----------:|
-| this library   |  5.727 us | 0.0930 us | 0.0776 us |
-| Handlebars.Net | 12.310 us | 0.0452 us | 0.0401 us |
-| Scriban        | 32.484 us | 0.3342 us | 0.2609 us |
-| DotLiquid      | 91.815 us | 0.5065 us | 0.4490 us |
+| Method           | Mean      | Error     | StdDev    |
+|----------------- |----------:|----------:|----------:|
+| this library     |  5.727 us | 0.0930 us | 0.0776 us |
+| Handlebars.Net   | 12.310 us | 0.0452 us | 0.0401 us |
+| Scriban          | 32.484 us | 0.3342 us | 0.2609 us |
+| Go text/template | 45.294 us |       n/a |       n/a |
+| DotLiquid        | 91.815 us | 0.5065 us | 0.4490 us |
