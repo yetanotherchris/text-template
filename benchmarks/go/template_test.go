@@ -45,7 +45,9 @@ func init() {
 func BenchmarkGoTextTemplate(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var buf bytes.Buffer
-		goTmpl.Execute(&buf, goData)
+		if err := goTmpl.Execute(&buf, goData); err != nil {
+			b.Fatal(err)
+		}
 		_ = buf.String()
 	}
 }
@@ -54,7 +56,9 @@ func BenchmarkGoComplexTemplate(b *testing.B) {
 	values := map[string]any{"Values": complexData()}
 	for i := 0; i < b.N; i++ {
 		var buf bytes.Buffer
-		complexTmpl.Execute(&buf, values)
+		if err := complexTmpl.ExecuteTemplate(&buf, "complex-template-data.yml", values); err != nil {
+			b.Fatal(err)
+		}
 		_ = buf.String()
 	}
 }
