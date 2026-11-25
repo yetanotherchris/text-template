@@ -691,4 +691,118 @@ Josie");
         });
         result.ShouldBe("0: a;1: b;");
     }
+
+    [Fact]
+    public void VariableAssignment_DoesNotMutateCallerDictionary()
+    {
+        var data = new Dictionary<string, object> { ["Name"] = "Alice" };
+        var result = TemplateEngine.Process("{{ $x := \"temp\" }}{{ $x }}-{{ .Name }}", data);
+        result.ShouldBe("temp-Alice");
+        data.ContainsKey("x").ShouldBeFalse();
+        data.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public void VariableReassignment_InsideBlock_UpdatesOuterScope()
+    {
+        const string tmpl = "{{ $x := \"init\" }}{{ range .Items }}{{ $x = . }}{{ end }}{{ $x }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new[] { "first", "last" }
+        });
+        result.ShouldBe("last");
+    }
+
+    [Fact]
+    public void RangeElse_DoesNotRunWhenItemsProduceEmptyOutput()
+    {
+        const string tmpl = "{{ range .Items }}{{ if .Show }}X{{ end }}{{ else }}EMPTY{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new[]
+            {
+                new Dictionary<string, object> { ["Show"] = false },
+                new Dictionary<string, object> { ["Show"] = false }
+            }
+        });
+        result.ShouldBe(string.Empty);
+    }
+
+    [Fact]
+    public void IsTrue_HandlesEmptyStringEmptyCollectionAndNumericZeros()
+    {
+        const string tmpl =
+            "{{ if .EmptyStr }}1{{ else }}0{{ end }}" +
+            "{{ if .EmptyArr }}1{{ else }}0{{ end }}" +
+            "{{ if .ZeroLong }}1{{ else }}0{{ end }}" +
+            "{{ if .ZeroDouble }}1{{ else }}0{{ end }}" +
+            "{{ if .ZeroDecimal }}1{{ else }}0{{ end }}" +
+            "{{ if .NonEmptyArr }}1{{ else }}0{{ end }}";
+
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["EmptyStr"] = "",
+            ["EmptyArr"] = Array.Empty<int>(),
+            ["ZeroLong"] = 0L,
+            ["ZeroDouble"] = 0.0,
+            ["ZeroDecimal"] = 0m,
+            ["NonEmptyArr"] = new[] { 1 }
+        });
+        result.ShouldBe("000001");
+    }
+
+    [Fact]
+    public void Range_WithNullElements_DoesNotThrow()
+    {
+        const string tmpl = "{{ range .Items }}[{{ . }}]{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["Items"] = new object?[] { "a", null, "b" }
+        });
+        result.ShouldBe("[a][][b]");
+    }
+
+    [Fact]
+    public void CrossTypeNumericComparisonAndEquality()
+    {
+        const string tmpl = "{{ if eq .LongVal 5 }}eq{{ end }}|{{ if gt .DoubleVal 2 }}gt{{ end }}|{{ if lt .DecimalVal 10 }}lt{{ end }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>
+        {
+            ["LongVal"] = 5L,
+            ["DoubleVal"] = 2.5,
+            ["DecimalVal"] = 9.5m
+        });
+        result.ShouldBe("eq|gt|lt");
+    }
+
+    [Fact]
+    public void Preprocess_PreservesTrimAndCommentTokensInsideStrings()
+    {
+        const string tmpl = "{{ \"{{- keep -}}\" }}|{{ \"/* keep */\" }}";
+        var result = TemplateEngine.Process(tmpl, new Dictionary<string, object>());
+        result.ShouldBe("{{- keep -}}|/* keep */");
+    }
+
+    [Fact]
+    public void Validate_ThrowsOnInvalidSyntax()
+    {
+        Should.Throw<FormatException>(() => TemplateEngine.Validate("{{ if .A }}unclosed"));
+    }
+
+    [Fact]
+    public void Len_WorksOnLazyIEnumerable()
+    {
+        static IEnumerable<int> Seq()
+        {
+            yield return 10;
+            yield return 20;
+            yield return 30;
+        }
+
+        var result = TemplateEngine.Process("{{ len .Items }}", new Dictionary<string, object>
+        {
+            ["Items"] = Seq()
+        });
+        result.ShouldBe("3");
+    }
 }

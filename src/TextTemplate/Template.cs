@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Antlr4.Runtime;
 
 namespace TextTemplate;
 
@@ -59,9 +58,8 @@ public class Template
     /// </summary>
     public string Execute(IDictionary<string, object> data)
     {
-        if (_parseTree == null)
-            _parseTree = TemplateEngine.Parse(_templateString);
-        return TemplateEngine.Process(_parseTree, data);
+        var tree = GetOrParseTree();
+        return TemplateEngine.Process(tree, data);
     }
 
     /// <summary>
@@ -69,9 +67,18 @@ public class Template
     /// </summary>
     public string Execute<T>(T model)
     {
-        if (_parseTree == null)
-            _parseTree = TemplateEngine.Parse(_templateString);
-        return TemplateEngine.Process(_parseTree, model);
+        var tree = GetOrParseTree();
+        return TemplateEngine.Process(tree, model);
+    }
+
+    private GoTextTemplateParser.TemplateContext GetOrParseTree()
+    {
+        var tree = Volatile.Read(ref _parseTree);
+        if (tree != null)
+            return tree;
+
+        tree = TemplateEngine.Parse(_templateString);
+        return Interlocked.CompareExchange(ref _parseTree, tree, null) ?? tree;
     }
 
     /// <summary>

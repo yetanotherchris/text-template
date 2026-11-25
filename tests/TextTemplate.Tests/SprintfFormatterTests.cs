@@ -103,5 +103,19 @@ public class SprintfFormatterTests
         result.ShouldStartWith("0x");
         result.ToLowerInvariant().ShouldContain("12345678");
     }
+
+    [Fact]
+    public void TestLongMinValue()
+    {
+        SprintfFormatter.Format("%d", long.MinValue).ShouldBe("-9223372036854775808");
+    }
+
+    [Fact]
+    public void TestFloatZeroPaddingWithPrecisionAndSign()
+    {
+        SprintfFormatter.Format("%08.2f", 3.14).ShouldBe("00003.14");
+        SprintfFormatter.Format("%08.2f", -1.5).ShouldBe("-0001.50");
+        SprintfFormatter.Format("%+08.2f", 1.5).ShouldBe("+0001.50");
+    }
 }
 

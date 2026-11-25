@@ -1,24 +1,35 @@
 using System;
-using System.Text;
 using System.Globalization;
+using System.Text;
 
 namespace TextTemplate;
 
 public static class SprintfFormatter
 {
-    private class FormatSpecifier
+    [Flags]
+    private enum FormatFlags
     {
-        public string Flags = string.Empty;
+        None = 0,
+        Left = 1 << 0,
+        Plus = 1 << 1,
+        Space = 1 << 2,
+        Zero = 1 << 3,
+        Alt = 1 << 4
+    }
+
+    private struct FormatSpecifier
+    {
+        public FormatFlags Flags;
         public int? Width;
         public int? Precision;
         public char Specifier;
     }
 
-    public static string Format(string format, params object[] args)
+    public static string Format(string format, params object?[] args)
     {
         if (format == null) throw new ArgumentNullException(nameof(format));
-        args ??= Array.Empty<object>();
-        var result = new StringBuilder();
+        args ??= Array.Empty<object?>();
+        var result = new StringBuilder(format.Length);
         int argIndex = 0;
         for (int i = 0; i < format.Length; i++)
         {
@@ -44,7 +55,7 @@ public static class SprintfFormatter
 
             if (argIndex >= args.Length)
                 throw new ArgumentException("Missing argument for format specifier");
-            object arg = args[argIndex++];
+            object? arg = args[argIndex++];
             result.Append(FormatArgument(spec, arg));
         }
         return result.ToString();
@@ -54,40 +65,55 @@ public static class SprintfFormatter
     {
         int i = index + 1; // skip '%'
         var spec = new FormatSpecifier();
+
         // flags
-        while (i < format.Length && "-+ #0".IndexOf(format[i]) >= 0)
+        while (i < format.Length)
         {
-            spec.Flags += format[i];
-            i++;
+            switch (format[i])
+            {
+                case '-': spec.Flags |= FormatFlags.Left; i++; continue;
+                case '+': spec.Flags |= FormatFlags.Plus; i++; continue;
+                case ' ': spec.Flags |= FormatFlags.Space; i++; continue;
+                case '0': spec.Flags |= FormatFlags.Zero; i++; continue;
+                case '#': spec.Flags |= FormatFlags.Alt; i++; continue;
+            }
+            break;
         }
+
         // width
-        string widthStr = string.Empty;
-        while (i < format.Length && char.IsDigit(format[i]))
+        if (i < format.Length && char.IsDigit(format[i]))
         {
-            widthStr += format[i];
-            i++;
+            int width = 0;
+            while (i < format.Length && char.IsDigit(format[i]))
+            {
+                width = checked(width * 10 + (format[i] - '0'));
+                i++;
+            }
+            spec.Width = width;
         }
-        if (widthStr.Length > 0)
-            spec.Width = int.Parse(widthStr);
+
         // precision
         if (i < format.Length && format[i] == '.')
         {
             i++;
-            string precStr = string.Empty;
+            int precision = 0;
             while (i < format.Length && char.IsDigit(format[i]))
             {
-                precStr += format[i];
+                precision = checked(precision * 10 + (format[i] - '0'));
                 i++;
             }
-            spec.Precision = precStr.Length > 0 ? int.Parse(precStr) : 0;
+            spec.Precision = precision;
         }
+
         // length modifiers - ignore single l or h
         if (i < format.Length && (format[i] == 'l' || format[i] == 'h'))
         {
             i++;
         }
+
         if (i >= format.Length)
             throw new FormatException("Invalid format string");
+
         spec.Specifier = format[i];
         index = i;
         return spec;
@@ -95,13 +121,14 @@ public static class SprintfFormatter
 
     private static string FormatArgument(FormatSpecifier spec, object? arg)
     {
-        bool left = spec.Flags.Contains('-');
-        bool plus = spec.Flags.Contains('+');
-        bool space = spec.Flags.Contains(' ') && !plus;
-        bool zero = spec.Flags.Contains('0') && !left;
-        bool alt = spec.Flags.Contains('#');
+        bool left = (spec.Flags & FormatFlags.Left) != 0;
+        bool plus = (spec.Flags & FormatFlags.Plus) != 0;
+        bool space = (spec.Flags & FormatFlags.Space) != 0 && !plus;
+        bool zero = (spec.Flags & FormatFlags.Zero) != 0 && !left;
+        bool alt = (spec.Flags & FormatFlags.Alt) != 0;
         string prefix = string.Empty;
         string digits;
+
         switch (spec.Specifier)
         {
             case 'd':
@@ -116,7 +143,7 @@ public static class SprintfFormatter
                     throw new ArgumentException("Invalid integer argument", ex);
                 }
                 bool neg = val < 0;
-                ulong absVal = (ulong)(neg ? -val : val);
+                ulong absVal = neg ? unchecked((ulong)(-val)) : (ulong)val;
                 digits = absVal.ToString(spec.Precision.HasValue ? $"D{spec.Precision}" : "D", CultureInfo.InvariantCulture);
                 if (neg)
                     prefix = "-";
@@ -125,6 +152,7 @@ public static class SprintfFormatter
                 else if (space)
                     prefix = " ";
                 return ApplyWidth(prefix + digits, spec.Width, left, zero && !spec.Precision.HasValue, prefix.Length);
+
             case 'u':
                 ulong uval;
                 try
@@ -141,6 +169,7 @@ public static class SprintfFormatter
                 else if (space)
                     prefix = " ";
                 return ApplyWidth(prefix + digits, spec.Width, left, zero && !spec.Precision.HasValue, prefix.Length);
+
             case 'o':
                 ulong oval;
                 try
@@ -156,6 +185,7 @@ public static class SprintfFormatter
                 if (alt && oval != 0) prefix = "0";
                 if (plus) prefix = "+" + prefix; else if (space) prefix = " " + prefix;
                 return ApplyWidth(prefix + digits, spec.Width, left, zero && !spec.Precision.HasValue, prefix.Length);
+
             case 'x':
             case 'X':
                 ulong xval;
@@ -172,6 +202,7 @@ public static class SprintfFormatter
                 if (alt && xval != 0) prefix = spec.Specifier == 'x' ? "0x" : "0X";
                 if (plus) prefix = "+" + prefix; else if (space) prefix = " " + prefix;
                 return ApplyWidth(prefix + digits, spec.Width, left, zero && !spec.Precision.HasValue, prefix.Length);
+
             case 'f':
             case 'F':
             case 'e':
@@ -204,30 +235,44 @@ public static class SprintfFormatter
                     {
                         char signChar = digits[idx + 1];
                         string expDigits = digits[(idx + 2)..];
-                        if (int.TryParse(expDigits, out int expVal))
+                        if (int.TryParse(expDigits, NumberStyles.Integer, CultureInfo.InvariantCulture, out int expVal))
                         {
                             expDigits = expVal.ToString("00", CultureInfo.InvariantCulture);
                             digits = digits.Substring(0, idx) + spec.Specifier + signChar + expDigits;
                         }
                     }
                 }
-                if (!digits.StartsWith("-") && (plus || space))
-                    prefix = plus ? "+" : " ";
-                return ApplyWidth(prefix + digits.TrimStart('+'), spec.Width, left, zero && !spec.Precision.HasValue, prefix.Length);
+                if (digits.StartsWith('-'))
+                {
+                    prefix = "-";
+                    digits = digits.Substring(1);
+                }
+                else if (plus)
+                {
+                    prefix = "+";
+                }
+                else if (space)
+                {
+                    prefix = " ";
+                }
+                return ApplyWidth(prefix + digits.TrimStart('+'), spec.Width, left, zero, prefix.Length);
+
             case 'c':
                 char ch = arg switch
                 {
                     char c => c,
                     int n => (char)n,
-                    _ => Convert.ToChar(arg ?? '\0')
+                    _ => Convert.ToChar(arg ?? '\0', CultureInfo.InvariantCulture)
                 };
                 digits = ch.ToString();
                 return ApplyWidth(digits, spec.Width, left, zero, 0);
+
             case 's':
                 string str = arg?.ToString() ?? string.Empty;
                 if (spec.Precision.HasValue && spec.Precision.Value < str.Length)
                     str = str.Substring(0, spec.Precision.Value);
                 return ApplyWidth(str, spec.Width, left, zero, 0);
+
             case 'p':
                 if (arg is IntPtr ptr)
                 {
@@ -249,6 +294,7 @@ public static class SprintfFormatter
                     prefix = "0x";
                 }
                 return ApplyWidth(prefix + digits, spec.Width, left, zero, prefix.Length);
+
             default:
                 throw new FormatException($"Unknown format specifier '%{spec.Specifier}'");
         }
@@ -258,11 +304,9 @@ public static class SprintfFormatter
     {
         if (!width.HasValue || value.Length >= width.Value)
             return value;
-        int padLength = width.Value - value.Length;
         char padChar = zeroPad ? '0' : ' ';
         if (zeroPad && !left && prefixLength > 0)
         {
-            // pad after prefix
             string prefix = value.Substring(0, prefixLength);
             string rest = value.Substring(prefixLength);
             rest = rest.PadLeft(width.Value - prefixLength, padChar);
@@ -271,4 +315,3 @@ public static class SprintfFormatter
         return left ? value.PadRight(width.Value, padChar) : value.PadLeft(width.Value, padChar);
     }
 }
-

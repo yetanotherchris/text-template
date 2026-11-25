@@ -1,23 +1,27 @@
-using System.Collections.Generic;
 using System.Collections;
+using System.Collections.Concurrent;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Text.Encodings.Web;
 using System.Net;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
-using Antlr4.Runtime.Tree;
 using Antlr4.Runtime.Misc;
 
 namespace TextTemplate;
 
 /// <summary>
-/// Simple template processor that uses a small ANTLR grammar
-/// to replace {{variable}} tokens and evaluate {{if}} blocks.
+/// Simple template processor that uses an ANTLR grammar
+/// to replace {{variable}} tokens and evaluate {{if}}, {{range}}, {{with}}, and template directives.
 /// </summary>
 internal static class TemplateEngine
 {
+    private static readonly ConcurrentDictionary<string, Delegate> RegisteredFunctions = new();
+    private static readonly ConcurrentDictionary<Type, TypeMemberMap> MemberCache = new();
+    private static readonly ConcurrentDictionary<string, object[]> PathSegmentCache = new();
+
     /// <summary>
     /// Processes <paramref name="templateString"/> by substituting tokens with values
     /// from <paramref name="data"/>.
@@ -39,15 +43,19 @@ internal static class TemplateEngine
 
     internal static GoTextTemplateParser.TemplateContext Parse(string templateString)
     {
-        templateString = PreprocessWhitespace(templateString);
-        templateString = PreprocessComments(templateString);
+        if (templateString == null) throw new ArgumentNullException(nameof(templateString));
+
+        templateString = PreprocessTemplate(templateString);
+
         var inputStream = new AntlrInputStream(templateString);
         var lexer = new GoTextTemplateLexer(inputStream);
+        lexer.RemoveErrorListeners();
         var tokens = new CommonTokenStream(lexer);
         var parser = new GoTextTemplateParser(tokens)
         {
             ErrorHandler = new BailErrorStrategy()
         };
+        parser.RemoveErrorListeners();
         parser.Interpreter.PredictionMode = PredictionMode.SLL;
         try
         {
@@ -57,11 +65,14 @@ internal static class TemplateEngine
         {
             inputStream = new AntlrInputStream(templateString);
             lexer = new GoTextTemplateLexer(inputStream);
+            lexer.RemoveErrorListeners();
             tokens = new CommonTokenStream(lexer);
             parser = new GoTextTemplateParser(tokens)
             {
                 ErrorHandler = new DefaultErrorStrategy()
             };
+            parser.RemoveErrorListeners();
+            parser.AddErrorListener(ThrowingParserErrorListener.Instance);
             parser.Interpreter.PredictionMode = PredictionMode.LL;
             return parser.template();
         }
@@ -70,8 +81,11 @@ internal static class TemplateEngine
     internal static string Process(GoTextTemplateParser.TemplateContext tree, IDictionary<string, object> data)
     {
         var templates = new Dictionary<string, GoTextTemplateParser.ContentContext>();
-        var visitor = new ReplacementVisitor(data, templates);
-        return visitor.Visit(tree);
+        var output = new StringBuilder();
+        var rootScope = new Scope(null, data);
+        var visitor = new ReplacementVisitor(rootScope, templates, output);
+        visitor.Visit(tree);
+        return output.ToString();
     }
 
     /// <summary>
@@ -80,86 +94,245 @@ internal static class TemplateEngine
     /// </summary>
     public static string Process<T>(string templateString, T model)
     {
-        IDictionary<string, object> dict = model as IDictionary<string, object> ??
-            ToDictionary(model!);
-        return Process(templateString, dict);
+        var tree = Parse(templateString);
+        return Process(tree, model);
     }
 
     internal static string Process<T>(GoTextTemplateParser.TemplateContext tree, T model)
     {
-        IDictionary<string, object> dict = model as IDictionary<string, object> ??
-            ToDictionary(model!);
-        return Process(tree, dict);
+        var templates = new Dictionary<string, GoTextTemplateParser.ContentContext>();
+        var output = new StringBuilder();
+        var rootScope = new Scope(null, model);
+        var visitor = new ReplacementVisitor(rootScope, templates, output);
+        visitor.Visit(tree);
+        return output.ToString();
     }
 
-    private static string PreprocessWhitespace(string template)
+    /// <summary>
+    /// Single-pass preprocessor that handles whitespace trimming ({{- and -}})
+    /// and strips comment-only actions ({{/* ... */}}) while respecting string literals
+    /// and comment boundaries inside template actions.
+    /// </summary>
+    private static string PreprocessTemplate(string template)
     {
-        var sb = new StringBuilder();
-        for (int i = 0; i < template.Length;)
-        {
-            if (i + 3 <= template.Length && template[i] == '{' && template[i + 1] == '{' && template[i + 2] == '-')
-            {
-                while (sb.Length > 0 && char.IsWhiteSpace(sb[sb.Length - 1]))
-                    sb.Length--;
-                sb.Append("{{-");
-                i += 3;
-                continue;
-            }
+        var sb = new StringBuilder(template.Length);
+        int i = 0;
+        int len = template.Length;
 
-            if (i + 3 <= template.Length && template[i] == '-' && template[i + 1] == '}' && template[i + 2] == '}')
+        while (i < len)
+        {
+            if (i + 1 < len && template[i] == '{' && template[i + 1] == '{')
             {
-                i += 3;
-                while (i < template.Length && char.IsWhiteSpace(template[i]))
-                    i++;
-                sb.Append("-}}");
+                bool openTrim = i + 2 < len && template[i + 2] == '-';
+                int actionStart = i;
+                int bodyStart = i + (openTrim ? 3 : 2);
+
+                if (openTrim)
+                {
+                    while (sb.Length > 0 && char.IsWhiteSpace(sb[sb.Length - 1]))
+                        sb.Length--;
+                }
+
+                // Scan to matching }} or -}} respecting string literals and /* ... */ comments
+                int j = bodyStart;
+                bool inString = false;
+                bool hasNonCommentContent = false;
+                bool closeTrim = false;
+                bool foundClose = false;
+
+                while (j < len)
+                {
+                    char c = template[j];
+
+                    if (inString)
+                    {
+                        if (c == '\\' && j + 1 < len)
+                        {
+                            j += 2;
+                            continue;
+                        }
+                        if (c == '"')
+                            inString = false;
+                        j++;
+                        continue;
+                    }
+
+                    // Comment inside action
+                    if (c == '/' && j + 1 < len && template[j + 1] == '*')
+                    {
+                        j += 2;
+                        while (j + 1 < len && !(template[j] == '*' && template[j + 1] == '/'))
+                            j++;
+                        if (j + 1 < len)
+                            j += 2;
+                        else
+                            j = len;
+                        continue;
+                    }
+
+                    // Close delimiter with trim: -}}
+                    if (c == '-' && j + 2 < len && template[j + 1] == '}' && template[j + 2] == '}')
+                    {
+                        closeTrim = true;
+                        foundClose = true;
+                        j += 3;
+                        break;
+                    }
+
+                    // Close delimiter: }}
+                    if (c == '}' && j + 1 < len && template[j + 1] == '}')
+                    {
+                        foundClose = true;
+                        j += 2;
+                        break;
+                    }
+
+                    if (c == '"')
+                    {
+                        inString = true;
+                        hasNonCommentContent = true;
+                        j++;
+                        continue;
+                    }
+
+                    if (!char.IsWhiteSpace(c))
+                        hasNonCommentContent = true;
+
+                    j++;
+                }
+
+                if (!foundClose)
+                {
+                    // Unclosed action: pass remaining text to parser so it reports the syntax error
+                    sb.Append(template, actionStart, len - actionStart);
+                    break;
+                }
+
+                if (hasNonCommentContent)
+                {
+                    sb.Append(template, actionStart, j - actionStart);
+                }
+
+                i = j;
+                if (closeTrim)
+                {
+                    while (i < len && char.IsWhiteSpace(template[i]))
+                        i++;
+                }
                 continue;
             }
 
             sb.Append(template[i]);
             i++;
         }
+
         return sb.ToString();
-    }
-
-    private static string PreprocessComments(string template)
-    {
-        return Regex.Replace(template, "\\{\\{-?\\s*/\\*.*?\\*/\\s*-?\\}\\}", string.Empty, RegexOptions.Singleline);
-    }
-
-    private static IDictionary<string, object> ToDictionary(object model)
-    {
-        var dict = new Dictionary<string, object>();
-        var type = model.GetType();
-        foreach (var prop in type.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
-        {
-            if (prop.GetIndexParameters().Length > 0)
-                continue;
-            var value = prop.GetValue(model);
-            if (value != null)
-                dict[prop.Name] = value;
-        }
-        foreach (var field in type.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
-        {
-            var value = field.GetValue(model);
-            if (value != null)
-                dict[field.Name] = value;
-        }
-        return dict;
     }
 
     private static bool IsTrue(object? value)
     {
-        return value switch
+        switch (value)
         {
-            bool b => b,
-            string s when bool.TryParse(s, out var b) => b,
-            int i => i != 0,
-            null => false,
-            _ => true
-        };
+            case null:
+                return false;
+            case bool b:
+                return b;
+            case string s:
+                if (s.Length == 0) return false;
+                if (s.Equals("false", StringComparison.OrdinalIgnoreCase)) return false;
+                return true;
+            case sbyte v:
+                return v != 0;
+            case byte v:
+                return v != 0;
+            case short v:
+                return v != 0;
+            case ushort v:
+                return v != 0;
+            case int v:
+                return v != 0;
+            case uint v:
+                return v != 0;
+            case long v:
+                return v != 0;
+            case ulong v:
+                return v != 0;
+            case float v:
+                return v != 0f;
+            case double v:
+                return v != 0d;
+            case decimal v:
+                return v != 0m;
+            case ICollection col:
+                return col.Count > 0;
+            case IEnumerable enumerable:
+                var enumerator = enumerable.GetEnumerator();
+                try
+                {
+                    return enumerator.MoveNext();
+                }
+                finally
+                {
+                    (enumerator as IDisposable)?.Dispose();
+                }
+            default:
+                return true;
+        }
     }
 
-    private static readonly Dictionary<string, Delegate> RegisteredFunctions = new();
+    private static bool IsNumeric(object? value) =>
+        value is sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal;
+
+    private static bool AreEqual(object? left, object? right)
+    {
+        if (ReferenceEquals(left, right)) return true;
+        if (left == null || right == null) return false;
+
+        if (IsNumeric(left) && IsNumeric(right))
+        {
+            return CompareNumeric(left, right) == 0;
+        }
+
+        return Equals(left, right);
+    }
+
+    private static bool TryCompare(object? left, object? right, out int comparison)
+    {
+        if (left == null || right == null)
+        {
+            comparison = 0;
+            return false;
+        }
+
+        if (IsNumeric(left) && IsNumeric(right))
+        {
+            comparison = CompareNumeric(left, right);
+            return true;
+        }
+
+        if (left is IComparable l && left.GetType() == right.GetType())
+        {
+            comparison = l.CompareTo(right);
+            return true;
+        }
+
+        comparison = 0;
+        return false;
+    }
+
+    private static int CompareNumeric(object left, object right)
+    {
+        if (left is float or double || right is float or double)
+        {
+            double l = Convert.ToDouble(left, CultureInfo.InvariantCulture);
+            double r = Convert.ToDouble(right, CultureInfo.InvariantCulture);
+            return l.CompareTo(r);
+        }
+
+        decimal ld = Convert.ToDecimal(left, CultureInfo.InvariantCulture);
+        decimal rd = Convert.ToDecimal(right, CultureInfo.InvariantCulture);
+        return ld.CompareTo(rd);
+    }
 
     /// <summary>
     /// Registers a function that can be invoked from templates using the
@@ -169,17 +342,159 @@ internal static class TemplateEngine
     /// <param name="function">The delegate to invoke.</param>
     public static void RegisterFunction(string name, Delegate function)
     {
+        if (name == null) throw new ArgumentNullException(nameof(name));
+        if (function == null) throw new ArgumentNullException(nameof(function));
         RegisteredFunctions[name] = function;
     }
 
-    private class ReplacementVisitor : GoTextTemplateParserBaseVisitor<string>
+    private static TypeMemberMap GetMemberMap(Type type) =>
+        MemberCache.GetOrAdd(type, static t => new TypeMemberMap(t));
+
+    private static bool TryGetMemberValue(object target, string key, out object? value)
     {
-        private readonly IDictionary<string, object> _data;
-        private readonly IDictionary<string, object> _rootData;
-        private readonly object? _current;
-        private readonly object? _rootCurrent;
-        private bool _lastPipelineWasAssignment;
-        private static readonly Dictionary<string, Func<object?[], object?>> PipelineFuncs = new()
+        if (target is IDictionary<string, object> genericDict)
+        {
+            return genericDict.TryGetValue(key, out value);
+        }
+
+        if (target is IDictionary dict)
+        {
+            if (dict.Contains(key))
+            {
+                value = dict[key];
+                return true;
+            }
+            value = null;
+            return false;
+        }
+
+        var map = GetMemberMap(target.GetType());
+        return map.TryGetValue(target, key, out value);
+    }
+
+    private sealed class TypeMemberMap
+    {
+        private readonly Dictionary<string, MemberInfo> _members;
+
+        public TypeMemberMap(Type type)
+        {
+            _members = new Dictionary<string, MemberInfo>(StringComparer.Ordinal);
+            foreach (var prop in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
+            {
+                if (prop.GetIndexParameters().Length == 0 && prop.CanRead)
+                    _members[prop.Name] = prop;
+            }
+            foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public))
+            {
+                _members.TryAdd(field.Name, field);
+            }
+        }
+
+        public bool TryGetValue(object target, string name, out object? value)
+        {
+            if (_members.TryGetValue(name, out var member))
+            {
+                value = member switch
+                {
+                    PropertyInfo prop => prop.GetValue(target),
+                    FieldInfo field => field.GetValue(target),
+                    _ => null
+                };
+                return true;
+            }
+
+            value = null;
+            return false;
+        }
+    }
+
+    private sealed class Scope
+    {
+        public Scope? Parent { get; }
+        public object? Context { get; set; }
+        private Dictionary<string, object?>? _variables;
+
+        public Scope(Scope? parent, object? context)
+        {
+            Parent = parent;
+            Context = context;
+        }
+
+        public void DeclareVariable(string name, object? value)
+        {
+            _variables ??= new Dictionary<string, object?>(StringComparer.Ordinal);
+            _variables[name] = value;
+        }
+
+        public void ResetVariables()
+        {
+            _variables?.Clear();
+        }
+
+        public bool AssignVariable(string name, object? value)
+        {
+            for (var s = this; s != null; s = s.Parent)
+            {
+                if (s._variables != null && s._variables.ContainsKey(name))
+                {
+                    s._variables[name] = value;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool TryGetVariable(string name, out object? value)
+        {
+            for (var s = this; s != null; s = s.Parent)
+            {
+                if (s._variables != null && s._variables.TryGetValue(name, out value))
+                    return true;
+            }
+            value = null;
+            return false;
+        }
+
+        public bool TryResolveName(string name, out object? value)
+        {
+            for (var s = this; s != null; s = s.Parent)
+            {
+                if (s._variables != null && s._variables.TryGetValue(name, out value))
+                    return true;
+
+                if (s.Context != null && TryGetMemberValue(s.Context, name, out value))
+                    return true;
+            }
+            value = null;
+            return false;
+        }
+    }
+
+    private sealed class ThrowingParserErrorListener : BaseErrorListener
+    {
+        public static readonly ThrowingParserErrorListener Instance = new();
+
+        public override void SyntaxError(
+            TextWriter output,
+            IRecognizer recognizer,
+            IToken offendingSymbol,
+            int line,
+            int charPositionInLine,
+            string msg,
+            RecognitionException e)
+        {
+            throw new FormatException($"Template syntax error at line {line}:{charPositionInLine}: {msg}", e);
+        }
+    }
+
+    private sealed class ReplacementVisitor : GoTextTemplateParserBaseVisitor<object?>
+    {
+        private readonly Scope _rootScope;
+        private Scope _scope;
+        private readonly Dictionary<string, GoTextTemplateParser.ContentContext> _templates;
+        private readonly StringBuilder _output;
+
+        private static readonly Dictionary<string, Func<object?[], object?>> PipelineFuncs = new(StringComparer.Ordinal)
         {
             ["lower"] = args => args.Length > 0 ? args[0]?.ToString()?.ToLowerInvariant() : null,
             ["print"] = args => string.Concat(args.Select(a => a?.ToString())),
@@ -187,11 +502,11 @@ internal static class TemplateEngine
             {
                 if (args.Length == 0) return string.Empty;
                 string fmt = args[0]?.ToString() ?? string.Empty;
-                var rest = args.Skip(1).ToArray();
+                var rest = args.Length > 1 ? args[1..] : Array.Empty<object?>();
                 return SprintfFormatter.Format(fmt, rest);
             },
-            ["html"] = args => System.Net.WebUtility.HtmlEncode(string.Concat(args.Select(a => a?.ToString()))),
-            ["js"] = args => System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(string.Concat(args.Select(a => a?.ToString()))),
+            ["html"] = args => WebUtility.HtmlEncode(string.Concat(args.Select(a => a?.ToString()))),
+            ["js"] = args => JavaScriptEncoder.Default.Encode(string.Concat(args.Select(a => a?.ToString()))),
             ["urlquery"] = args => Uri.EscapeDataString(string.Concat(args.Select(a => a?.ToString()))),
             ["quote"] = args =>
             {
@@ -208,8 +523,17 @@ internal static class TemplateEngine
                 if (v is ICollection col) return col.Count;
                 if (v is IEnumerable enumerable)
                 {
-                    var list = enumerable.Cast<object?>().ToList();
-                    return list.Count;
+                    int count = 0;
+                    var enumerator = enumerable.GetEnumerator();
+                    try
+                    {
+                        while (enumerator.MoveNext()) count++;
+                    }
+                    finally
+                    {
+                        (enumerator as IDisposable)?.Dispose();
+                    }
+                    return count;
                 }
                 return 0;
             },
@@ -220,6 +544,11 @@ internal static class TemplateEngine
                 for (int i = 1; i < args.Length && current != null; i++)
                 {
                     var key = args[i];
+                    if (key == null)
+                    {
+                        current = null;
+                        continue;
+                    }
                     if (current is IList list && key is int idx)
                     {
                         current = idx >= 0 && idx < list.Count ? list[idx] : null;
@@ -227,7 +556,7 @@ internal static class TemplateEngine
                     }
                     if (current is IDictionary dict)
                     {
-                        current = dict[key];
+                        current = dict.Contains(key) ? dict[key] : null;
                         continue;
                     }
                     current = null;
@@ -237,8 +566,8 @@ internal static class TemplateEngine
             ["slice"] = args =>
             {
                 if (args.Length == 0 || args[0] == null) return null;
-                int start = args.Length > 1 ? Convert.ToInt32(args[1]) : 0;
-                int end = args.Length > 2 ? Convert.ToInt32(args[2]) : -1;
+                int start = args.Length > 1 ? Convert.ToInt32(args[1], CultureInfo.InvariantCulture) : 0;
+                int end = args.Length > 2 ? Convert.ToInt32(args[2], CultureInfo.InvariantCulture) : -1;
                 var src = args[0];
                 if (src is string str)
                 {
@@ -251,10 +580,11 @@ internal static class TemplateEngine
                 {
                     if (end < 0 || end > list.Count) end = list.Count;
                     if (start < 0) start = 0;
-                    var result = new List<object?>();
+                    if (start >= end) return Array.Empty<object?>();
+                    var result = new object?[end - start];
                     for (int i = start; i < end; i++)
-                        result.Add(list[i]);
-                    return result.ToArray();
+                        result[i - start] = list[i];
+                    return result;
                 }
                 return null;
             },
@@ -262,166 +592,148 @@ internal static class TemplateEngine
             {
                 if (args.Length == 0) return null;
                 var fnSpec = args[0];
-                var callArgs = args.Skip(1).ToArray();
+                var callArgs = args.Length > 1 ? args[1..] : Array.Empty<object?>();
 
                 if (fnSpec is string name && RegisteredFunctions.TryGetValue(name, out var reg))
                     return reg.DynamicInvoke(callArgs);
 
-                switch (fnSpec)
+                return fnSpec switch
                 {
-                    case Func<object?[], object?> f:
-                        return f(callArgs);
-                    case Delegate d:
-                        return d.DynamicInvoke(callArgs);
-                    default:
-                        return null;
-                }
+                    Func<object?[], object?> f => f(callArgs),
+                    Delegate d => d.DynamicInvoke(callArgs),
+                    _ => null
+                };
             }
         };
 
-        private readonly Dictionary<string, GoTextTemplateParser.ContentContext> _templates;
-
-        public ReplacementVisitor(IDictionary<string, object> data, Dictionary<string, GoTextTemplateParser.ContentContext> templates)
-            : this(data, data, data, data, templates)
+        public ReplacementVisitor(Scope rootScope, Dictionary<string, GoTextTemplateParser.ContentContext> templates, StringBuilder output)
         {
-        }
-
-        private ReplacementVisitor(IDictionary<string, object> data, IDictionary<string, object> rootData, object? current, object? rootCurrent, Dictionary<string, GoTextTemplateParser.ContentContext> templates)
-        {
-            _data = data;
-            _rootData = rootData;
-            _current = current;
-            _rootCurrent = rootCurrent;
+            _rootScope = rootScope;
+            _scope = rootScope;
             _templates = templates;
+            _output = output;
         }
 
-        public override string VisitTemplate(GoTextTemplateParser.TemplateContext context)
+        public override object? VisitTemplate(GoTextTemplateParser.TemplateContext context)
         {
-            var sb = new StringBuilder();
-            foreach (var part in context.content().part())
-                sb.Append(Visit(part));
-            return sb.ToString();
+            VisitContent(context.content());
+            return null;
         }
 
-        public override string VisitContent(GoTextTemplateParser.ContentContext context)
+        public override object? VisitContent(GoTextTemplateParser.ContentContext context)
         {
-            var sb = new StringBuilder();
-            foreach (var part in context.part())
-                sb.Append(Visit(part));
-            return sb.ToString();
+            var parts = context.part();
+            for (int i = 0; i < parts.Length; i++)
+                VisitPart(parts[i]);
+            return null;
         }
 
-        public override string VisitPart(GoTextTemplateParser.PartContext context)
+        public override object? VisitPart(GoTextTemplateParser.PartContext context)
         {
-            if (context.TEXT() != null)
-                return context.TEXT().GetText();
-            if (context.placeholder() != null)
-                return Visit(context.placeholder());
-            if (context.ifBlock() != null)
-                return Visit(context.ifBlock());
-            if (context.forBlock() != null)
-                return Visit(context.forBlock());
-            if (context.rangeBlock() != null)
-                return Visit(context.rangeBlock());
-            if (context.withBlock() != null)
-                return Visit(context.withBlock());
-            if (context.defineBlock() != null)
-                return Visit(context.defineBlock());
-            if (context.templateCall() != null)
-                return Visit(context.templateCall());
-            if (context.blockBlock() != null)
-                return Visit(context.blockBlock());
-            return string.Empty;
-        }
-
-        public override string VisitPlaceholder(GoTextTemplateParser.PlaceholderContext context)
-        {
-            object? result = EvaluatePipeline(context.pipeline());
-            if (_lastPipelineWasAssignment)
+            var text = context.TEXT();
+            if (text != null)
             {
-                _lastPipelineWasAssignment = false;
-                return string.Empty;
+                _output.Append(text.GetText());
+                return null;
             }
-            return result?.ToString() ?? string.Empty;
+            if (context.placeholder() != null) return VisitPlaceholder(context.placeholder());
+            if (context.ifBlock() != null) return VisitIfBlock(context.ifBlock());
+            if (context.forBlock() != null) return VisitForBlock(context.forBlock());
+            if (context.rangeBlock() != null) return VisitRangeBlock(context.rangeBlock());
+            if (context.withBlock() != null) return VisitWithBlock(context.withBlock());
+            if (context.defineBlock() != null) return VisitDefineBlock(context.defineBlock());
+            if (context.templateCall() != null) return VisitTemplateCall(context.templateCall());
+            if (context.blockBlock() != null) return VisitBlockBlock(context.blockBlock());
+            return null;
         }
 
-        public override string VisitIfBlock(GoTextTemplateParser.IfBlockContext context)
+        public override object? VisitPlaceholder(GoTextTemplateParser.PlaceholderContext context)
         {
-            object? condVal = EvaluateExpr(context.expr());
-            if (IsTrue(condVal))
-                return Visit(context.content());
+            var (result, isAssignment) = EvaluatePipeline(context.pipeline());
+            if (!isAssignment && result != null)
+                _output.Append(result);
+            return null;
+        }
+
+        public override object? VisitIfBlock(GoTextTemplateParser.IfBlockContext context)
+        {
+            if (IsTrue(EvaluateExpr(context.expr())))
+            {
+                VisitContent(context.content());
+                return null;
+            }
 
             foreach (var elif in context.elseIfBlock())
             {
-                condVal = EvaluateExpr(elif.expr());
-                if (IsTrue(condVal))
-                    return Visit(elif.content());
+                if (IsTrue(EvaluateExpr(elif.expr())))
+                {
+                    VisitContent(elif.content());
+                    return null;
+                }
             }
 
-            if (context.elseBlock() != null)
-                return Visit(context.elseBlock().content());
+            var elseBlock = context.elseBlock();
+            if (elseBlock != null)
+                VisitContent(elseBlock.content());
 
-            return string.Empty;
+            return null;
         }
 
-        public override string VisitForBlock(GoTextTemplateParser.ForBlockContext context)
+        public override object? VisitForBlock(GoTextTemplateParser.ForBlockContext context)
         {
             var listObj = ResolvePath(context.path());
-            if (listObj is not IEnumerable enumerable)
+            if (listObj is not IEnumerable enumerable || listObj is string)
             {
                 if (context.elseBlock() != null)
-                    return Visit(context.elseBlock().content());
-                return string.Empty;
+                    VisitContent(context.elseBlock().content());
+                return null;
             }
 
             var itemName = context.IDENT().GetText();
-            var sb = new StringBuilder();
-            foreach (var item in enumerable)
+            var content = context.content();
+            var previousScope = _scope;
+            var loopScope = new Scope(previousScope, null);
+            bool hasItems = false;
+
+            try
             {
-                var child = new Dictionary<string, object>(_data)
+                _scope = loopScope;
+                foreach (var item in enumerable)
                 {
-                    [itemName] = item!,
-                };
-                var v = new ReplacementVisitor(child, _rootData, item!, _rootCurrent, _templates);
-                sb.Append(v.Visit(context.content()));
+                    hasItems = true;
+                    loopScope.Context = item;
+                    loopScope.ResetVariables();
+                    loopScope.DeclareVariable(itemName, item);
+                    VisitContent(content);
+                }
+            }
+            finally
+            {
+                _scope = previousScope;
             }
 
-            if (sb.Length == 0 && context.elseBlock() != null)
-                return Visit(context.elseBlock().content());
+            if (!hasItems && context.elseBlock() != null)
+                VisitContent(context.elseBlock().content());
 
-            return sb.ToString();
+            return null;
         }
 
-        public override string VisitRangeBlock(GoTextTemplateParser.RangeBlockContext context)
+        public override object? VisitRangeBlock(GoTextTemplateParser.RangeBlockContext context)
         {
-            object? sourceObj;
             var clause = context.rangeClause();
-            var rcType = clause.GetType();
-            object? pipelineObj = rcType.GetMethod("pipeline")?.Invoke(clause, null);
-            if (clause.varList() != null && pipelineObj is GoTextTemplateParser.PipelineContext pc)
-            {
-                sourceObj = EvaluatePipeline(pc);
-            }
-            else
-            {
-                var pathCtx = rcType.GetMethod("path")?.Invoke(clause, null) as GoTextTemplateParser.PathContext;
-                if (pathCtx != null)
-                    sourceObj = ResolvePath(pathCtx);
-                else
-                    sourceObj = null;
-            }
+            var pathCtx = clause.path();
+            object? sourceObj = pathCtx != null ? ResolvePath(pathCtx) : null;
 
-            if (sourceObj is not IEnumerable)
+            if (sourceObj is not IEnumerable enumerable || sourceObj is string)
             {
                 if (context.elseBlock() != null)
-                    return Visit(context.elseBlock().content());
-                return string.Empty;
+                    VisitContent(context.elseBlock().content());
+                return null;
             }
-            IEnumerable enumerable = (IEnumerable)sourceObj;
 
             string? firstVar = null;
             string? secondVar = null;
-            var varList = context.rangeClause().varList();
+            var varList = clause.varList();
             if (varList != null)
             {
                 var vars = varList.varName();
@@ -429,203 +741,179 @@ internal static class TemplateEngine
                 if (vars.Length > 1) secondVar = vars[1].GetText().TrimStart('$');
             }
 
-            var sb = new StringBuilder();
+            var content = context.content();
+            var previousScope = _scope;
+            var loopScope = new Scope(previousScope, null);
+            bool hasItems = false;
 
-            if (sourceObj is IDictionary dict)
+            try
             {
-                foreach (DictionaryEntry entry in dict)
+                _scope = loopScope;
+                if (sourceObj is IDictionary dict)
                 {
-                    var root = entry.Value is IDictionary<string, object> valueDict
-                        ? new Dictionary<string, object>(valueDict)
-                        : ToDictionary(entry.Value!);
-
-                    foreach (var kv in _data)
-                        if (!root.ContainsKey(kv.Key))
-                            root[kv.Key] = kv.Value;
-
-                    if (firstVar != null)
-                        root[firstVar] = entry.Key!;
-                    if (secondVar != null)
-                        root[secondVar] = entry.Value!;
-
-                    var v = new ReplacementVisitor(root, _rootData, entry.Value!, _rootCurrent, _templates);
-                    sb.Append(v.Visit(context.content()));
+                    foreach (DictionaryEntry entry in dict)
+                    {
+                        hasItems = true;
+                        loopScope.Context = entry.Value;
+                        loopScope.ResetVariables();
+                        if (firstVar != null)
+                            loopScope.DeclareVariable(firstVar, entry.Key);
+                        if (secondVar != null)
+                            loopScope.DeclareVariable(secondVar, entry.Value);
+                        VisitContent(content);
+                    }
+                }
+                else
+                {
+                    int index = 0;
+                    foreach (var item in enumerable)
+                    {
+                        hasItems = true;
+                        loopScope.Context = item;
+                        loopScope.ResetVariables();
+                        if (firstVar != null && secondVar != null)
+                        {
+                            loopScope.DeclareVariable(firstVar, index);
+                            loopScope.DeclareVariable(secondVar, item);
+                        }
+                        else if (firstVar != null)
+                        {
+                            loopScope.DeclareVariable(firstVar, item);
+                        }
+                        VisitContent(content);
+                        index++;
+                    }
                 }
             }
-            else
+            finally
             {
-                int index = 0;
-                foreach (var item in enumerable)
-                {
-                    var root = item is IDictionary<string, object> itemDict
-                        ? new Dictionary<string, object>(itemDict)
-                        : ToDictionary(item!);
-
-                    foreach (var kv in _data)
-                        if (!root.ContainsKey(kv.Key))
-                            root[kv.Key] = kv.Value;
-
-                    if (firstVar != null && secondVar != null)
-                    {
-                        root[firstVar] = index;
-                        root[secondVar] = item!;
-                    }
-                    else if (firstVar != null)
-                    {
-                        root[firstVar] = item!;
-                    }
-
-                    var v = new ReplacementVisitor(root, _rootData, item!, _rootCurrent, _templates);
-                    sb.Append(v.Visit(context.content()));
-                    index++;
-                }
+                _scope = previousScope;
             }
 
-            if (sb.Length == 0 && context.elseBlock() != null)
-                return Visit(context.elseBlock().content());
+            if (!hasItems && context.elseBlock() != null)
+                VisitContent(context.elseBlock().content());
 
-            return sb.ToString();
+            return null;
         }
 
-        public override string VisitWithBlock(GoTextTemplateParser.WithBlockContext context)
+        public override object? VisitWithBlock(GoTextTemplateParser.WithBlockContext context)
         {
-            object? value = EvaluatePipeline(context.pipeline());
+            var (value, _) = EvaluatePipeline(context.pipeline());
             if (IsTrue(value))
             {
-                var root = value is IDictionary<string, object> dict
-                    ? new Dictionary<string, object>(dict)
-                    : ToDictionary(value!);
-
-                foreach (var kv in _data)
-                    if (!root.ContainsKey(kv.Key))
-                        root[kv.Key] = kv.Value;
-
-                var v = new ReplacementVisitor(root, _rootData, value!, _rootCurrent, _templates);
-                return v.Visit(context.content());
+                VisitInChildScope(value, context.content());
+                return null;
             }
 
             if (context.elseBlock() != null)
-                return Visit(context.elseBlock().content());
+                VisitContent(context.elseBlock().content());
 
-            return string.Empty;
+            return null;
         }
 
-        public override string VisitDefineBlock(GoTextTemplateParser.DefineBlockContext context)
+        public override object? VisitDefineBlock(GoTextTemplateParser.DefineBlockContext context)
         {
-            string name = context.STRING().GetText();
-            name = name.Substring(1, name.Length - 2);
+            string name = UnescapeStringLiteral(context.STRING().GetText());
             _templates[name] = context.content();
-            return string.Empty;
+            return null;
         }
 
-        public override string VisitTemplateCall(GoTextTemplateParser.TemplateCallContext context)
+        public override object? VisitTemplateCall(GoTextTemplateParser.TemplateCallContext context)
         {
-            string name = context.STRING().GetText();
-            name = name.Substring(1, name.Length - 2);
+            string name = UnescapeStringLiteral(context.STRING().GetText());
             if (!_templates.TryGetValue(name, out var tmpl))
-                return string.Empty;
+                return null;
 
-            object? ctxObj = context.pipeline() != null ? EvaluatePipeline(context.pipeline()) : _data;
+            object? ctxObj = context.pipeline() != null
+                ? EvaluatePipeline(context.pipeline()).Value
+                : _scope.Context;
 
-            IDictionary<string, object> root;
-            if (ctxObj is IDictionary<string, object> dict)
-                root = new Dictionary<string, object>(dict);
-            else if (ctxObj == _data)
-                root = new Dictionary<string, object>(_data);
-            else if (ctxObj != null)
-                root = ToDictionary(ctxObj!);
-            else
-                root = new Dictionary<string, object>();
-
-            foreach (var kv in _data)
-                if (!root.ContainsKey(kv.Key))
-                    root[kv.Key] = kv.Value;
-
-            object? newCurrent = ctxObj == _data ? _current : ctxObj;
-            var v = new ReplacementVisitor(root, _rootData, newCurrent, _rootCurrent, _templates);
-            return v.Visit(tmpl);
+            VisitInChildScope(ctxObj, tmpl);
+            return null;
         }
 
-        public override string VisitBlockBlock(GoTextTemplateParser.BlockBlockContext context)
+        public override object? VisitBlockBlock(GoTextTemplateParser.BlockBlockContext context)
         {
-            string name = context.STRING().GetText();
-            name = name.Substring(1, name.Length - 2);
-
+            string name = UnescapeStringLiteral(context.STRING().GetText());
             if (!_templates.TryGetValue(name, out var tmpl))
             {
-                _templates[name] = context.content();
                 tmpl = context.content();
+                _templates[name] = tmpl;
             }
 
-            object? ctxObj = EvaluatePipeline(context.pipeline());
-
-            IDictionary<string, object> root;
-            if (ctxObj is IDictionary<string, object> dict)
-                root = new Dictionary<string, object>(dict);
-            else if (ctxObj != null)
-                root = ToDictionary(ctxObj!);
-            else
-                root = new Dictionary<string, object>();
-
-            foreach (var kv in _data)
-                if (!root.ContainsKey(kv.Key))
-                    root[kv.Key] = kv.Value;
-
-            var v = new ReplacementVisitor(root, _rootData, ctxObj, _rootCurrent, _templates);
-            return v.Visit(tmpl);
+            var (ctxObj, _) = EvaluatePipeline(context.pipeline());
+            VisitInChildScope(ctxObj, tmpl);
+            return null;
         }
 
-        private object? ResolvePath(GoTextTemplateParser.PathContext context)
+        private void VisitInChildScope(object? contextValue, GoTextTemplateParser.ContentContext content)
         {
-            string text = context.GetText();
-            return ResolvePath(text);
+            var previousScope = _scope;
+            _scope = new Scope(previousScope, contextValue);
+            try
+            {
+                VisitContent(content);
+            }
+            finally
+            {
+                _scope = previousScope;
+            }
         }
+
+        private object? ResolvePath(GoTextTemplateParser.PathContext context) =>
+            ResolvePath(context.GetText());
 
         private object? ResolvePath(string text)
         {
             if (text == ".")
-                return _current;
+                return _scope.Context;
 
-            if (text.StartsWith("$"))
+            if (text.StartsWith('$'))
             {
-                if (text == "$" || text.StartsWith("$."))
+                if (text == "$")
+                    return _rootScope.Context;
+
+                if (text.StartsWith("$.", StringComparison.Ordinal))
                 {
-                    string rootText = text.StartsWith("$.") ? text.Substring(2) : string.Empty;
-                    if (rootText.Length == 0)
-                        return _rootCurrent;
-                    var segRoot = ParseSegments(rootText);
-                    object? curRoot = _rootData;
-                    foreach (var seg in segRoot)
-                    {
-                        if (curRoot == null)
-                            return null;
-                        curRoot = ResolveSegment(curRoot, seg);
-                    }
+                    var segRoot = GetCachedSegments(text.Substring(2));
+                    object? curRoot = _rootScope.Context;
+                    for (int i = 0; i < segRoot.Length && curRoot != null; i++)
+                        curRoot = ResolveSegment(curRoot, segRoot[i]);
                     return curRoot;
                 }
 
-                var segmentsVar = ParseSegments(text);
-                if (segmentsVar.Count == 0 || segmentsVar[0] is not VariableName varSeg)
+                var segmentsVar = GetCachedSegments(text);
+                if (segmentsVar.Length == 0 || segmentsVar[0] is not VariableName varSeg)
                     return null;
-                _data.TryGetValue(varSeg.Name, out object? current);
-                for (int idx = 1; idx < segmentsVar.Count; idx++)
-                {
-                    if (current == null)
-                        return null;
+
+                if (!_scope.TryGetVariable(varSeg.Name, out object? current))
+                    _scope.TryResolveName(varSeg.Name, out current);
+
+                for (int idx = 1; idx < segmentsVar.Length && current != null; idx++)
                     current = ResolveSegment(current, segmentsVar[idx]);
-                }
+
                 return current;
             }
 
-            var segments = ParseSegments(text);
-            object? currentDefault = _data;
-            foreach (var seg in segments)
+            var segments = GetCachedSegments(text);
+            if (segments.Length == 0)
+                return null;
+
+            object? currentVal;
+            if (segments[0] is string firstKey)
             {
-                if (currentDefault == null)
+                if (!_scope.TryResolveName(firstKey, out currentVal))
                     return null;
-                currentDefault = ResolveSegment(currentDefault, seg);
             }
-            return currentDefault;
+            else
+            {
+                currentVal = ResolveSegment(_scope.Context, segments[0]);
+            }
+
+            for (int i = 1; i < segments.Length && currentVal != null; i++)
+                currentVal = ResolveSegment(currentVal, segments[i]);
+
+            return currentVal;
         }
 
         private object? EvaluateExpr(GoTextTemplateParser.ExprContext context)
@@ -637,14 +925,14 @@ internal static class TemplateEngine
             {
                 var left = EvaluateValue(context.value(0));
                 var right = EvaluateValue(context.value(1));
-                return Equals(left, right);
+                return AreEqual(left, right);
             }
 
             if (context.NE() != null)
             {
                 var left = EvaluateValue(context.value(0));
                 var right = EvaluateValue(context.value(1));
-                return !Equals(left, right);
+                return !AreEqual(left, right);
             }
 
             if (context.LT() != null || context.LE() != null ||
@@ -652,9 +940,8 @@ internal static class TemplateEngine
             {
                 var left = EvaluateValue(context.value(0));
                 var right = EvaluateValue(context.value(1));
-                if (left is IComparable l && right is IComparable r)
+                if (TryCompare(left, right, out int cmp))
                 {
-                    int cmp = l.CompareTo(r);
                     if (context.LT() != null) return cmp < 0;
                     if (context.LE() != null) return cmp <= 0;
                     if (context.GT() != null) return cmp > 0;
@@ -691,31 +978,16 @@ internal static class TemplateEngine
             return null;
         }
 
-        private object? EvaluatePipeline(GoTextTemplateParser.PipelineContext context)
+        private (object? Value, bool IsAssignment) EvaluatePipeline(GoTextTemplateParser.PipelineContext context)
         {
-            _lastPipelineWasAssignment = false;
-
-            // Use reflection to support optional var assignment fields
-            GoTextTemplateParser.VarListContext? varList = null;
-            bool isColoneq = false;
-            bool isAssign = false;
-            var type = context.GetType();
-            var varListMethod = type.GetMethod("varList");
-            if (varListMethod != null)
-                varList = varListMethod.Invoke(context, null) as GoTextTemplateParser.VarListContext;
-            if (varList != null)
-            {
-                isColoneq = type.GetMethod("COLONEQ")?.Invoke(context, null) != null;
-                isAssign = type.GetMethod("ASSIGN")?.Invoke(context, null) != null;
-            }
+            var varList = context.varList();
+            bool isAssign = varList != null && context.ASSIGN() != null;
 
             var commands = context.command();
             object? result = null;
-            bool first = true;
-            foreach (var cmd in commands)
+            for (int i = 0; i < commands.Length; i++)
             {
-                result = ExecuteCommand(cmd, first ? null : result);
-                first = false;
+                result = ExecuteCommand(commands[i], i == 0 ? null : result);
             }
 
             if (varList != null)
@@ -725,18 +997,41 @@ internal static class TemplateEngine
                     string name = v.GetText().TrimStart('$');
                     if (isAssign)
                     {
-                        if (_data.ContainsKey(name))
-                            _data[name] = result!;
+                        _scope.AssignVariable(name, result);
                     }
-                    else // COLONEQ
+                    else
                     {
-                        _data[name] = result!;
+                        _scope.DeclareVariable(name, result);
                     }
                 }
-                _lastPipelineWasAssignment = true;
+                return (result, true);
             }
 
-            return result;
+            return (result, false);
+        }
+
+        private object? EvaluateLiteral(
+            Antlr4.Runtime.Tree.ITerminalNode? numberNode,
+            Antlr4.Runtime.Tree.ITerminalNode? stringNode,
+            Antlr4.Runtime.Tree.ITerminalNode? boolNode)
+        {
+            if (numberNode != null)
+            {
+                string numText = numberNode.GetText();
+                if (int.TryParse(numText, NumberStyles.Integer, CultureInfo.InvariantCulture, out int i))
+                    return i;
+                if (long.TryParse(numText, NumberStyles.Integer, CultureInfo.InvariantCulture, out long l))
+                    return l;
+                return numText;
+            }
+
+            if (stringNode != null)
+                return UnescapeStringLiteral(stringNode.GetText());
+
+            if (boolNode != null)
+                return bool.Parse(boolNode.GetText());
+
+            return null;
         }
 
         private object? EvaluateValue(GoTextTemplateParser.ValueContext context)
@@ -744,27 +1039,7 @@ internal static class TemplateEngine
             if (context.path() != null)
                 return ResolvePath(context.path());
 
-            if (context.NUMBER() != null)
-            {
-                if (int.TryParse(context.NUMBER().GetText(), out int i))
-                    return i;
-                return context.NUMBER().GetText();
-            }
-
-            if (context.STRING() != null)
-            {
-                string s = context.STRING().GetText();
-                s = s.Substring(1, s.Length - 2);
-                s = Regex.Unescape(s);
-                return s;
-            }
-
-            if (context.BOOLEAN() != null)
-            {
-                return bool.Parse(context.BOOLEAN().GetText());
-            }
-
-            return null;
+            return EvaluateLiteral(context.NUMBER(), context.STRING(), context.BOOLEAN());
         }
 
         private object? ApplyPipelineFunction(string name, params object?[] args)
@@ -780,42 +1055,26 @@ internal static class TemplateEngine
             {
                 string text = context.path().GetText();
                 if (input != null && PipelineFuncs.ContainsKey(text))
-                {
                     return ApplyPipelineFunction(text, input);
-                }
+
                 return ResolvePath(context.path());
             }
 
             if (context.IDENT() != null)
             {
                 string name = context.IDENT().GetText();
-                var args = new List<object?>();
+                var argNodes = context.argument();
+                int offset = input != null ? 1 : 0;
+                var args = new object?[argNodes.Length + offset];
                 if (input != null)
-                    args.Add(input);
-                foreach (var a in context.argument())
-                    args.Add(EvaluateArgument(a));
-                return ApplyPipelineFunction(name, args.ToArray());
+                    args[0] = input;
+                for (int i = 0; i < argNodes.Length; i++)
+                    args[i + offset] = EvaluateArgument(argNodes[i]);
+                return ApplyPipelineFunction(name, args);
             }
 
-            if (context.STRING() != null)
-            {
-                string s = context.STRING().GetText();
-                s = s.Substring(1, s.Length - 2);
-                s = Regex.Unescape(s);
-                return s;
-            }
-
-            if (context.NUMBER() != null)
-            {
-                if (int.TryParse(context.NUMBER().GetText(), out int i))
-                    return i;
-                return context.NUMBER().GetText();
-            }
-
-            if (context.BOOLEAN() != null)
-            {
-                return bool.Parse(context.BOOLEAN().GetText());
-            }
+            if (context.NUMBER() != null || context.STRING() != null || context.BOOLEAN() != null)
+                return EvaluateLiteral(context.NUMBER(), context.STRING(), context.BOOLEAN());
 
             return input;
         }
@@ -825,27 +1084,57 @@ internal static class TemplateEngine
             if (context.path() != null)
                 return ResolvePath(context.path());
 
-            if (context.NUMBER() != null)
-            {
-                if (int.TryParse(context.NUMBER().GetText(), out int i))
-                    return i;
-                return context.NUMBER().GetText();
-            }
+            return EvaluateLiteral(context.NUMBER(), context.STRING(), context.BOOLEAN());
+        }
 
-            if (context.STRING() != null)
-            {
-                string s = context.STRING().GetText();
-                s = s.Substring(1, s.Length - 2);
-                s = Regex.Unescape(s);
-                return s;
-            }
+        private static string UnescapeStringLiteral(string raw)
+        {
+            if (raw.Length < 2)
+                return raw;
 
-            if (context.BOOLEAN() != null)
-            {
-                return bool.Parse(context.BOOLEAN().GetText());
-            }
+            string inner = raw.Substring(1, raw.Length - 2);
+            if (!inner.Contains('\\'))
+                return inner;
 
-            return null;
+            var sb = new StringBuilder(inner.Length);
+            for (int i = 0; i < inner.Length; i++)
+            {
+                char c = inner[i];
+                if (c != '\\' || i + 1 >= inner.Length)
+                {
+                    sb.Append(c);
+                    continue;
+                }
+
+                char next = inner[++i];
+                switch (next)
+                {
+                    case '"': sb.Append('"'); break;
+                    case '\\': sb.Append('\\'); break;
+                    case 'n': sb.Append('\n'); break;
+                    case 'r': sb.Append('\r'); break;
+                    case 't': sb.Append('\t'); break;
+                    case 'b': sb.Append('\b'); break;
+                    case 'f': sb.Append('\f'); break;
+                    case 'a': sb.Append('\a'); break;
+                    case 'v': sb.Append('\v'); break;
+                    case '0': sb.Append('\0'); break;
+                    case 'u' when i + 4 < inner.Length &&
+                        int.TryParse(inner.AsSpan(i + 1, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int uCode):
+                        sb.Append((char)uCode);
+                        i += 4;
+                        break;
+                    case 'x' when i + 2 < inner.Length &&
+                        int.TryParse(inner.AsSpan(i + 1, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int xCode):
+                        sb.Append((char)xCode);
+                        i += 2;
+                        break;
+                    default:
+                        sb.Append('\\').Append(next);
+                        break;
+                }
+            }
+            return sb.ToString();
         }
 
         private sealed class PathReference
@@ -860,11 +1149,14 @@ internal static class TemplateEngine
             public VariableName(string name) => Name = name;
         }
 
-        private static List<object> ParseSegments(string text)
+        private static object[] GetCachedSegments(string text) =>
+            PathSegmentCache.GetOrAdd(text, static t => ParseSegments(t));
+
+        private static object[] ParseSegments(string text)
         {
             var result = new List<object>();
             int i = 0;
-            if (text.StartsWith("$") && text.Length > 1 && text[1] != '.')
+            if (text.StartsWith('$') && text.Length > 1 && text[1] != '.')
             {
                 i = 1;
                 int start = i;
@@ -873,7 +1165,11 @@ internal static class TemplateEngine
                 result.Add(new VariableName(varName));
                 if (i < text.Length && text[i] == '.') i++;
             }
-            else if (text.StartsWith(".")) i++;
+            else if (text.StartsWith('.'))
+            {
+                i++;
+            }
+
             while (i < text.Length)
             {
                 if (text[i] == '.')
@@ -897,9 +1193,9 @@ internal static class TemplateEngine
                         int start = i;
                         while (i < text.Length && text[i] != ']') i++;
                         var key = text.Substring(start, i - start).Trim();
-                        if (int.TryParse(key, out int idx))
+                        if (int.TryParse(key, NumberStyles.Integer, CultureInfo.InvariantCulture, out int idx))
                             result.Add(idx);
-                        else if (key.StartsWith("."))
+                        else if (key.StartsWith('.') || key.StartsWith('$'))
                             result.Add(new PathReference(key));
                         else
                             result.Add(key);
@@ -914,7 +1210,8 @@ internal static class TemplateEngine
                     result.Add(id);
                 }
             }
-            return result;
+
+            return result.ToArray();
         }
 
         private object? ResolveSegment(object? current, object segment)
@@ -923,11 +1220,7 @@ internal static class TemplateEngine
 
             if (segment is int idx)
             {
-                if (current is IList list)
-                {
-                    return idx >= 0 && idx < list.Count ? list[idx] : null;
-                }
-                return null;
+                return current is IList list && idx >= 0 && idx < list.Count ? list[idx] : null;
             }
 
             if (segment is PathReference pathRef)
@@ -937,54 +1230,13 @@ internal static class TemplateEngine
                     return null;
 
                 if (keyObj is int dynIdx && current is IList listDyn)
-                {
                     return dynIdx >= 0 && dynIdx < listDyn.Count ? listDyn[dynIdx] : null;
-                }
 
-                var dynKey = keyObj.ToString()!;
-                if (current is IDictionary<string, object> dictDyn)
-                {
-                    return dictDyn.TryGetValue(dynKey, out var val) ? val : null;
-                }
-
-                if (current is IDictionary mapDyn)
-                {
-                    return mapDyn.Contains(dynKey) ? mapDyn[dynKey] : null;
-                }
-
-                var typeDyn = current.GetType();
-                var propDyn = typeDyn.GetProperty(dynKey);
-                if (propDyn != null)
-                    return propDyn.GetValue(current);
-
-                var fieldDyn = typeDyn.GetField(dynKey);
-                if (fieldDyn != null)
-                    return fieldDyn.GetValue(current);
-
-                return null;
+                return TryGetMemberValue(current, keyObj.ToString()!, out var dynVal) ? dynVal : null;
             }
 
             string key = segment.ToString()!;
-            if (current is IDictionary<string, object> dict)
-            {
-                return dict.TryGetValue(key, out var val) ? val : null;
-            }
-
-            if (current is IDictionary mapObj)
-            {
-                return mapObj.Contains(key) ? mapObj[key] : null;
-            }
-
-            var type = current.GetType();
-            var prop = type.GetProperty(key);
-            if (prop != null)
-                return prop.GetValue(current);
-
-            var field = type.GetField(key);
-            if (field != null)
-                return field.GetValue(current);
-
-            return null;
+            return TryGetMemberValue(current, key, out var val) ? val : null;
         }
     }
 }
